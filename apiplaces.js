@@ -58,7 +58,7 @@ router.get('/place', (req,res)=>{
     const {placeID}= req.query;
     
 
-    sqlQuery('SELECT * from places WHERE id=? LIMIT 1',placeID)
+    sqlQuery('SELECT * from places WHERE placeID=? LIMIT 1',placeID)
         .then(result=>{
             if(result.length !== 0)
             {
@@ -80,7 +80,7 @@ router.get('/place', (req,res)=>{
 router.get('/images', (req,res)=>{
     const {placeID,num=0}= req.query;
     offset= num * 6;
-    sqlQuery('SELECT * from images WHERE placeID=? LIMIT 6 OFFSET ?',[placeID,offset])
+    sqlQuery('SELECT * from placephotos WHERE placeID=? LIMIT 6 OFFSET ?',[placeID,offset])
         .then((result)=>{
             if(result.length !== 0)
             {

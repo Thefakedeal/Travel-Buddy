@@ -14,7 +14,7 @@ function logincheck(req,res,next){
 
 
 router.get('/places', logincheck, (req,res)=>{
-    sqlQuery('SELECT id,name,rank from places WHERE userID=?',req.session.user)
+    sqlQuery('SELECT placeID,name,rank from places WHERE userID=?',req.session.user)
         .then(places=>{
             res.status(200).json(places);
         })
@@ -25,9 +25,9 @@ router.get('/places', logincheck, (req,res)=>{
 });
 
 router.get('/itenerary', logincheck, (req,res)=>{
-    sqlQuery('SELECT routeID,name,rank from places WHERE userID=?',req.session.user)
-        .then(places=>{
-            res.status(200).json(places);
+    sqlQuery('SELECT iteneraryID,name,rank from itenerary WHERE userID=?',req.session.user)
+        .then(itenerary=>{
+            res.status(200).json(itenerary);
         })
         .catch(err=>{
             res.status(500).send("Something Went Wrong");

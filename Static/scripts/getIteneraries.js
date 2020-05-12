@@ -60,7 +60,7 @@ async function getTravelRoutes(){
 function addContent(itenerary){   
     return `
     
-    <a href="${location}/itenerary?id=${itenerary.routeID}" title="${itenerary.name}">
+    <a href="${location}/itenerary?iteneraryID=${itenerary.iteneraryID}" title="${itenerary.name}">
         <li>
             <span class="placeName"> <b> ${itenerary.name} </b> </span>
         </li>

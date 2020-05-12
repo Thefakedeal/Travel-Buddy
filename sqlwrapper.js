@@ -7,7 +7,7 @@ function sqlQuery(query, values){
                  host     : 'localhost',
                  user     : 'travelbuddyuser',
                  password : '', 
-                 database : 'travelbuddydb'
+                 database : 'database_travelbuddy'
              }
          )
          
@@ -21,7 +21,6 @@ function sqlQuery(query, values){
         conn.query(query,values, (err, results, fields)=>{
             conn.end();
             if(err){
-                console.log(err)
                 reject(err);
                 
             }

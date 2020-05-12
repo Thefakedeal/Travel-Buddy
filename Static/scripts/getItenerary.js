@@ -1,6 +1,5 @@
 let urlSearch= new URLSearchParams(location.search);
-let iteneraryID=urlSearch.get('id')
-let myLocation= JSON.parse(sessionStorage.getItem('location'));
+let iteneraryID=urlSearch.get('iteneraryID');
 let number= 0;
 let markerLayer=[];
 let placeList= document.getElementById('placeList');
@@ -107,8 +106,7 @@ function removeit(id){
 }
 
 submitButton.addEventListener('click', async e=>{
-    sendphoto.delete('id');
-    sendphoto.append('id', iteneraryID);
+    sendphoto.set('iteneraryID',iteneraryID);
     let response= await fetch('/upload/itenerary/photos',{
         method: 'POST',
         body: sendphoto
@@ -120,7 +118,6 @@ submitButton.addEventListener('click', async e=>{
         submitButton.disabled=true;
         sendphoto = new FormData();
         getImage(iteneraryID);
-
     }
 })
 
@@ -150,7 +147,7 @@ rating.forEach(vote=>
         vote.addEventListener('change', async e=>{
             let likes= document.querySelector('input[name="rating"]:checked').value;
             let action={
-                routeID: iteneraryID,
+                iteneraryID: iteneraryID,
                 likes: likes
             }
             fetch('/rating/itenerary/vote',{
@@ -168,7 +165,7 @@ rating.forEach(vote=>
    async function submitComment(){
         let comment= document.getElementById('comment');
         let action= {
-            routeID: iteneraryID,
+            iteneraryID: iteneraryID,
             comment: comment.value
         }
         let response= await fetch('/rating/itenerary/comment',{
@@ -304,7 +301,7 @@ function displayCurrentLocation(){
             if(currentLocation){
                 mymap.removeLayer(currentLocation);
             }
-            let currentLocation= L.marker([lat,lon]).addTo(mymap).bindPopup(`Current Postion`).openPopup();
+            currentLocation= L.marker([lat,lon]).addTo(mymap).bindPopup(`Current Postion`).openPopup();
         })
         
 }

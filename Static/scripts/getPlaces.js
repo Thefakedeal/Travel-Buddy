@@ -102,7 +102,7 @@ function addContent(place){
     markerLayer=[...markerLayer,{placeID:placeID, marker: markerToAdd}];
     return `
     
-    <a href="${location}/place?id=${place.id}" title="${place.catagory}" onmouseover="popupMarker(${placeID})">
+    <a href="${location}/place?placeID=${place.placeID}" title="${place.catagory}" onmouseover="popupMarker(${placeID})">
         <li>
             <span class="placeName">${place.name}</span>
             <span class="distance"> ${place.distance} km</span>

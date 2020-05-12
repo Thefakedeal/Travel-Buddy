@@ -12,13 +12,13 @@ function logincheck(req,res,next){
     }
 
 }
-
+ 
 router.get('/place',logincheck, (req,res)=>{
     let {mylat, mylon, placeID} = req.query;
     mylat= parseFloat(mylat).toFixed(4);
     mylon= parseFloat(mylon).toFixed(4);
 
-    sqlQuery('SELECT * FROM places WHERE id=? LIMIT 1',placeID)
+    sqlQuery('SELECT * FROM places WHERE placeID=? LIMIT 1',placeID)
         .then(result=>{
             const {lat,lon}= result[0];
             return fetch(`http://localhost:5000/route/v1/foot/${mylon},${mylat};${lon},${lat}?geometries=geojson&continue_straight=false`)
@@ -45,7 +45,7 @@ router.get('/itenerary',(req,res)=>{
         lat: mylatitude,
         lon: mylongitude
     }
-    sqlQuery('SELECT * FROM routeplaces WHERE routeID=?', iteneraryID)
+    sqlQuery('SELECT * FROM iteneraryplaces WHERE iteneraryID=?', iteneraryID)
         .then((result)=>{
             return optimalRoute(result,myplace)
         })

@@ -46,7 +46,7 @@ file.addEventListener('change', (e)=>{
             img.setAttribute('class','uploadPhoto');
             img.setAttribute('onclick', `removeit(${img.id})`);
             imageview.appendChild(img);
-            sendplacedata.append(img.id, file.files[0]);
+            sendplacedata.set(img.id, file.files[0]);
         }
         else{
             alert("File Size Too Large. Please Use Image Less than 2MB")
@@ -74,7 +74,7 @@ form.addEventListener('submit', async e=>{
         responseText= await response.text();   
         
         if(response.status===201){
-            location= `../iteneraries/itenerary?id=${responseText}`
+            location= `../iteneraries/itenerary?iteneraryID=${responseText}`
         }
         else{
             alert(responseText);

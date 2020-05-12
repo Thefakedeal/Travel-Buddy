@@ -1,5 +1,6 @@
 const express= require('express');
 const router = express.Router();
+const uuid= require('uuid');
 const sqlQuery= require('./sqlwrapper');
 
 
@@ -14,132 +15,81 @@ function logincheck(req,res,next){
 }
  
 router.post('/vote',logincheck, async (req,res)=>{
-    const {likes, routeID} = req.body;
+    const {likes, iteneraryID} = req.body;
     userID = req.session.user;
-    query= `UPDATE routeratings.?? SET likes= ? WHERE userID=?`;
-   
+    ratingID= uuid.v4();
 
-    try
-    {
-        const result= await  sqlQuery(query,[routeID,likes, userID]);
-        if(result.affectedRows===0){
-            if(parseInt(likes)===1){
-                ratingquery= 'UPDATE routes SET rank= rank + 1 WHERE routeID=? ';
-            }
-            else{
-                ratingquery= 'UPDATE routes SET rank= rank - 1 WHERE routeID=?';
-            }
-            const success= await sqlQuery(ratingquery,routeID)
-            if(success){
-                if(result.affectedRows===0){
-                        query= 'INSERT INTO routeratings.?? ( likes, userID ) VALUES (?,?)'
-                        await sqlQuery(query,[routeID,likes, userID ])
-                    }
-            }    
-        }
-        else if(result.changedRows!==0){
-            if(parseInt(likes)===1){
-                ratingquery= 'UPDATE routes SET rank= rank + 2 WHERE routeID=?';
-            }
-            else{
-                ratingquery= 'UPDATE routes SET rank= rank - 2 WHERE routeID=?';
-            }
-            await sqlQuery(ratingquery,routeID);
-        }
+    let vote=0;
+    if(likes<=-1) vote=-1;
+    else if(likes>=1) vote=1;
 
-    }
-    catch(error)
-    {
-        console.log(err)
-    }
+    query= `INSERT INTO iteneraryRating(ratingID, iteneraryID, userID, likes) VALUES(?,?,?,?)`;
 
-    // sqlQuery(query,[routeID,likes, userID])
-    //     .then(result=>{
-    //         if(result.affectedRows===0){
-    //             if(parseInt(likes)===1){
-    //                 ratingquery= 'UPDATE routes SET rank= rank + 1 WHERE routeID=? ';
-    //             }
-    //             else{
-    //                 ratingquery= 'UPDATE routes SET rank= rank - 1 WHERE routeID=?';
-    //             }
-    //             sqlQuery(ratingquery,routeID)
-    //             .then((res)=>{
-    //                 if(result.affectedRows===0){
-    //                     query= 'INSERT INTO routeratings.?? ( likes, userID ) VALUES (?,?)'
-    //                     sqlQuery(query,[routeID,likes, userID ])
-    //                 }
-    //             })
-    //         }
-    //         else if(result.changedRows!==0){
-    //             if(parseInt(likes)===1){
-    //                 ratingquery= 'UPDATE routes SET rank= rank + 2 WHERE routeID=?';
-    //             }
-    //             else{
-    //                 ratingquery= 'UPDATE routes SET rank= rank - 2 WHERE routeID=?';
-    //             }
-    //             sqlQuery(ratingquery,routeID);
-
-    //         }
-            
-    //     })
-    //     .catch((err)=>{
-    //         console.log(err);
-    //     })
-    
+    sqlQuery(query,[ratingID,iteneraryID,userID,vote])
+        .catch(err=>{
+            return sqlQuery('UPDATE iteneraryRating SET likes=? WHERE iteneraryID=? AND userID=?', [vote,iteneraryID,userID])
+        })
+        .catch(err=>{
+                console.log(err);
+        })
 });
 
 router.post('/comment',logincheck, (req,res)=>{
-    const {comment, routeID} = req.body;
-    userID = req.session.user;
-    name = req.session.name;
-    query= `UPDATE routeratings.?? SET comment= ?, name=? WHERE userID=?`;
-    sqlQuery(query,[routeID,comment,name, userID])
-        .then(result=>{ 
-            if(result.affectedRows===0){
-                query= 'INSERT INTO routeratings.?? ( comment, userID, name) VALUES (?,?,?)'
-                return sqlQuery(query,[routeID,comment, userID, name])
-            }
-            else{
-                res.status(200).send('Comment Edited');
-                return 0;
-            }
+    const {comment, iteneraryID} = req.body;
+    const userID = req.session.user;
+    const ratingID= uuid.v4();
+
+    let query= 'INSERT INTO iteneraryRating(ratingID, iteneraryID, userID, comment) VALUES(?,?,?,?)';
+    sqlQuery(query,[ratingID,iteneraryID,userID,comment])
+        .then((result)=>{
+            res.status(201).send('Comment Added');
         })
-        .then(result=>{
-            if(result!==0)
-            return res.status(200).send('Comment Added');
+        .catch(err=>{
+            return sqlQuery('UPDATE iteneraryRating SET comment=? WHERE iteneraryID=? AND userID=?',[comment,iteneraryID,userID]);
+        })
+        .then((result)=>{
+            res.status(200).send('Comment Succesful');
         })
         .catch((err)=>{
-            console.log(err);
             res.status(500).send("Something Wrong happened")
+            console.log(err);
         })
     
 });
 
 router.get('/likes', (req,res)=>{
     const {iteneraryID}= req.query;
-    sqlQuery('SELECT COUNT(1) FROM routeratings.?? WHERE likes=1',iteneraryID)
+    sqlQuery('SELECT COUNT(1) FROM iteneraryRating WHERE likes=1 AND iteneraryID=?',iteneraryID)
     .then((result)=>{
         likes= result[0]['COUNT(1)'];
-        return sqlQuery('SELECT COUNT(1) FROM routeratings.?? WHERE likes=-1',iteneraryID)   
+        return sqlQuery('SELECT COUNT(1) FROM iteneraryRating WHERE likes=-1 AND iteneraryID=?',iteneraryID)    
     })
     .then(result=>{
         dislikes= result[0]['COUNT(1)'];
         ratio= {likes:likes, dislikes:dislikes}
         res.status(200).json(ratio);
+        return ratio;
+    })
+    .then(result=>{
+        let rank= likes-dislikes;
+        sqlQuery('UPDATE itenerary SET rank=? WHERE iteneraryID=?',[rank,iteneraryID])
+            .catch(err=>{
+                console.log(err)
+            })
     })
     .catch((err)=>{
-        res.status(500).send('Something went wrong');
+         res.status(500).send('Something went wrong');
     })
 })
 
-router.get('/comments', async (req,res)=>{
+router.get('/comments',  (req,res)=>{
     const {iteneraryID}= req.query;
-    sqlQuery('SELECT userID, name, comment FROM routeratings.?? WHERE comment IS NOT NULL',iteneraryID)
-        .then((result)=>{
-                    
+    sqlQuery('SELECT iteneraryRating.userID, users.name, iteneraryRating.comment FROM iteneraryRating INNER JOIN users ON iteneraryRating.userID= users.userID WHERE (iteneraryRating.iteneraryID=? AND comment IS NOT NULL)',iteneraryID)
+        .then(result=>{
             res.status(200).json(result);
         })
         .catch((err)=>{
+            console.log(err)
             res.status(500).send('Something went wrong');
         })
         
@@ -148,7 +98,7 @@ router.get('/comments', async (req,res)=>{
 router.get('/myrating',logincheck, (req,res)=>{
     const {iteneraryID}= req.query;
     const userID= req.session.user;
-    sqlQuery('SELECT likes,comment FROM routeratings.?? WHERE userID=?',[iteneraryID,userID])
+    sqlQuery('SELECT likes,comment FROM iteneraryRating WHERE iteneraryID=? AND userID=?',[iteneraryID,userID])
         .then((result)=>{
             if(result.length===0){
                 res.status(404).send("No Review")

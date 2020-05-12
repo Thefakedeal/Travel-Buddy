@@ -35,7 +35,7 @@ function reduceImgSizeAndConvertToJpeg(image){
 }
 
 
-function savePhotos(file_array, id){
+function savePhotos(file_array, placeID, userID){
     let flag= 'success';
     let imageDetails=[];
     for(image in file_array){
@@ -51,14 +51,14 @@ function savePhotos(file_array, id){
                     else{
                         if(imageID){
 
-                            imageDetails= [...imageDetails, [imageID,id]]
+                            imageDetails= [...imageDetails, [imageID,placeID,userID]]
                         }
                     }
                 }   
         }
     }
 
-    sqlQuery('INSERT INTO images(imageID,placeID) values?', [imageDetails])
+    sqlQuery('INSERT INTO placephotos(imageID,placeID,userID) VALUES ?', [imageDetails])
         .catch(err=> console.log(err))
 
     return flag;
@@ -68,33 +68,30 @@ function savePhotos(file_array, id){
 
 router.post('/', logincheck, (req,res)=>{
   
-    let {name, description, lat, lon, catagory} = req.body;
-    lat= parseFloat(lat).toFixed(5);
-    lon= parseFloat(lon).toFixed(5);
-     
-    placeJSON= {
-        name: name,
-        description: description,
-        lat: lat,
-        lon: lon,
-        userID: req.session.user,
-        catagory: catagory,
-    }
+    const {name, description, lat, lon, catagory} = req.body;
+    const userID= req.session.user;
 
-    placeJSON.id= uuid.v4();
+    const placeJSON={
+        placeID: uuid.v4(),
+        name: name,
+        catagory: catagory,
+        description: description,
+        lat: parseFloat(lat).toPrecision(10),
+        lon: parseFloat(lon).toPrecision(10),
+        userID: userID,
+    }
     
     if(accepted_catagory.includes(placeJSON.catagory) )
     {
         sqlQuery('INSERT INTO places SET ?', placeJSON)
-            .then((results)=>{
-                query= `CREATE TABLE places.?? (userID VARCHAR(36) NOT NULL, name VARCHAR(36) NULL, likes BOOLEAN NULL, comment TEXT NULL, PRIMARY KEY(userID), FOREIGN KEY(userID) REFERENCES travelbuddydb.users(userID) ON DELETE CASCADE)`;
-                return sqlQuery(query, placeJSON.id)
-            })
             .then(results=>{
                 if(req.files){
-                    savePhotos(req.files, placeJSON.id);
+                    const flag=savePhotos(req.files, placeJSON.placeID, userID);
+                    if(flag==='fail'){
+                        throw new Error(flag);
+                    }
                 }
-                res.status(200).send(placeJSON.id);
+                res.status(200).send(placeJSON.placeID);
             })
             .catch(err=>{
                 sqlQuery('DELETE FROM PLACES WHERE id=?',placeJSON.id);
@@ -115,12 +112,13 @@ router.post('/', logincheck, (req,res)=>{
 
 
 router.post('/photos',logincheck, (req,res)=>{
-    let { id }= req.body;
-    if(Array.isArray(id)){
-        id= id[0];
+    let { placeID }= req.body;
+    const userID= req.session.user;
+    if(Array.isArray(placeID)){
+        placeID= id[0];
     }
-    if(req.files && id){
-        message= savePhotos(req.files, id)
+    if(req.files && placeID){
+        message= savePhotos(req.files, placeID,userID)
         if(message=== 'fail'){
             res.status(500).send(message);
         }

@@ -31,7 +31,7 @@ function reduceImgSizeAndConvertToJpeg(image){
     return imageID;
 }
 
-function savePhotos(file_array, id){
+function savePhotos(file_array, iteneraryID, userID){
     let flag= 'success';
     let imageDetails=[];
     for(image in file_array){
@@ -47,14 +47,14 @@ function savePhotos(file_array, id){
                     else{
                         if(imageID){
 
-                            imageDetails= [...imageDetails, [imageID,id]]
+                            imageDetails= [...imageDetails, [imageID, iteneraryID, userID]]
                         }
                     }
                 }   
         }
     }
-
-    sqlQuery('INSERT INTO routeimage(imageID,routeID) values?', [imageDetails])
+ 
+    sqlQuery('INSERT INTO iteneraryphotos(imageID,iteneraryID, userID) values?', [imageDetails])
         .catch(err=> console.log(err))
 
     return flag;
@@ -64,7 +64,7 @@ function savePhotos(file_array, id){
 router.post('/', logincheck, (req,res)=>{
     let {name, description, places}= req.body;
     const userID= req.session.user;
-    const routeID= uuid.v4();
+    const iteneraryID= uuid.v4();
     let insertplaces=[]
     places= JSON.parse(places);
     if(places.length>10 && Array.isArray(places)){
@@ -73,30 +73,24 @@ router.post('/', logincheck, (req,res)=>{
     }
     
     places.forEach(({name, lat, lon})=> {
-        insertplaces= [...insertplaces,[uuid.v4(),routeID,name, parseFloat(lat).toFixed(5),parseFloat(lon).toFixed(5)]];
+        insertplaces= [...insertplaces,[uuid.v4(),iteneraryID,name, parseFloat(lat).toPrecision(8),parseFloat(lon).toPrecision(8)]];
     });
 
-    sqlQuery('INSERT INTO routes(routeID, name, userID, description) VALUES(?,?,?,?)',[routeID,name,userID,description])
+    sqlQuery('INSERT INTO itenerary(iteneraryID, name,description, userID) VALUES(?,?,?,?)',[iteneraryID,name,description,userID])
         .then((result)=>{
-            query=`CREATE TABLE routeratings.?? (userID VARCHAR(36) NOT NULL, name VARCHAR(36) NULL, likes BOOLEAN NULL, comment TEXT NULL, PRIMARY KEY(userID), FOREIGN KEY(userID) REFERENCES travelbuddydb.users(userID) ON DELETE CASCADE)`;
-            return sqlQuery(query, routeID)
-        })
-        .then((result)=>{
-            return sqlQuery('INSERT INTO routeplaces(placeID,routeID,name,lat,lon) VALUES ?',[insertplaces])
-               
+            return sqlQuery('INSERT INTO iteneraryPlaces(placeID,iteneraryID,name,lat,lon) VALUES ?',[insertplaces])    
         })
         .then((result)=>{
             if(req.files){
-                flag= savePhotos(req.files, routeID);
+                flag= savePhotos(req.files, iteneraryID,userID);
                 if(flag==='fail'){
                     throw new Error(flag);
                 }
             }
-            res.status(201).send(routeID);
+            res.status(201).send(iteneraryID);
         })
         .catch((err)=>{
-            sqlQuery('DELETE FROM routes WHERE routeID=?',routeID);
-            sqlQuery('DROP TABLE routeratings.??', routeID);
+            sqlQuery('DELETE FROM itenerary WHERE iteneraryID=?',iteneraryID);
             console.log(err);
             res.status(500).send('Some Thing Went Wrong');
         })
@@ -105,12 +99,13 @@ router.post('/', logincheck, (req,res)=>{
 
 
 router.post('/photos',logincheck, (req,res)=>{
-    let { id }= req.body;
-    if(Array.isArray(id)){
-        id= id[0];
+    let { iteneraryID }= req.body;
+    if(Array.isArray(iteneraryID)){
+        iteneraryID= iteneraryID[0];
     }
-    if(req.files && id){
-        message= savePhotos(req.files, id)
+    const userID= req.session.user;
+    if(req.files && iteneraryID){
+        message= savePhotos(req.files, iteneraryID,userID)
         if(message=== 'fail'){
             res.status(500).send(message);
         }

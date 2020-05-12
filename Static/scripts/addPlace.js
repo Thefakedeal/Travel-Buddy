@@ -41,7 +41,7 @@ file.addEventListener('change', (e)=>{
             img.setAttribute('class','uploadPhoto');
             img.setAttribute('onclick', `removeit(${img.id})`);
             imageview.appendChild(img);
-            placeDatatoSend.append(img.id, file.files[0]);
+            placeDatatoSend.set(img.id, file.files[0]);
         }
         else{
             alert("File Size Too Large. Please Use Image Less than 2MB")
@@ -63,8 +63,8 @@ form.addEventListener('submit', async e=>{
         placeDatatoSend.set('name',name )
         placeDatatoSend.set('description',description )
         placeDatatoSend.set('catagory',catagory)
-        placeDatatoSend.set('lat',lat.toFixed(5))
-        placeDatatoSend.set('lon',lon.toFixed(5))
+        placeDatatoSend.set('lat',parseFloat(lat).toPrecision(10));
+        placeDatatoSend.set('lon',parseFloat(lon).toPrecision(10));
         
         
         response= await fetch('/upload/places',{
@@ -75,7 +75,7 @@ form.addEventListener('submit', async e=>{
         responseText= await response.text();   
         
         if(response.status===200){
-            location= `../places/place?id=${responseText}`
+            location= `../places/place?placeID=${responseText}`
         }
         else{
             alert(responseText);

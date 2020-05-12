@@ -1,5 +1,5 @@
 var urlSearch= new URLSearchParams(location.search);
-var placeID=urlSearch.get('id')
+var placeID=urlSearch.get('placeID')
 var myLocation= JSON.parse(sessionStorage.getItem('location'));
 let number= 0;
 
@@ -97,8 +97,7 @@ function removeit(id){
 }
 
 submit.addEventListener('click', async e=>{
-    sendphoto.delete('id');
-    sendphoto.append('id', placeID);
+    sendphoto.set('placeID',placeID);
     reader= new FileReader();
     response= await fetch('/upload/places/photos',{
         method: 'POST',
