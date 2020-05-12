@@ -1,0 +1,152 @@
+.form{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+input{
+    width: 80%;
+    height: 2rem;
+    font-size: 25px;
+    margin: 0.5rem auto;
+    outline: none;
+}
+
+
+
+#description{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    height: 10rem;
+    width: 80%;
+    font-size: 20px;
+    outline: none;
+    resize: none;
+}
+
+#submit{
+    font-weight: bold;
+    background-color: var(--primary-color-dark);
+    text-align: center;
+    color: var(--secondary-color);
+    box-shadow: 0px 5px 5px gray;
+    outline: none;
+    border: none;
+    margin-bottom: 2.5rem;
+}
+
+#submit:disabled{
+    opacity: 0.3;
+}
+
+#submit:hover{
+    background-color: var(--primary-color);
+}
+
+#submit:active{
+    transform: scale(1.01);
+    box-shadow: 0px 5px 10px  gray;
+}
+
+#file{
+    display: none;
+}
+
+#upload{
+    height: 2rem;
+    width: 80%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    background-color: var(--primary-color-dark);
+    text-align: center;
+    color: var(--secondary-color);
+    box-shadow: 0px 5px 5px gray;
+    outline: none;
+    border: none;
+}
+
+
+.imageview{
+    display: flex;
+    flex-wrap: wrap;
+    width: 80%;
+}
+
+.imageview img{
+    width: 30%;
+    margin: 2% 1%;
+    object-fit: cover;
+}
+.imageview img:hover{
+    filter: grayscale(100%) brightness(10%);
+    
+}
+
+
+@media only screen and (min-width: 769px){
+   main{
+    width: 100vw;
+    left: 0px;
+    justify-content: flex-start;
+}
+
+#map{
+    flex: 2;
+} 
+}
+
+
+#placeAdder{
+    display: flex;
+    width: 80%;
+}
+
+#placeName{
+    flex: 7
+}
+
+#addButton{
+    flex: 3;
+    height: auto;
+    background-color: var(--primary-color-dark);
+    text-align: center;
+    color: var(--secondary-color);
+    outline: none;
+    border: none;
+}
+
+#addButton:disabled{
+    opacity: 0.3;
+}
+
+#addButton:hover{
+    background-color: var(--primary-color);
+}
+
+#addButton:active{
+    transform: scale(1.01);
+    box-shadow: 0px 5px 10px  gray;
+}
+
+#placeList{
+    width: 80%;
+    overflow: hidden;
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+
+#placeList li{
+    box-shadow: none;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+}
+
+.deleteIt:hover{
+    fill: rgba(255, 0, 0, 0.5);
+    cursor: pointer;
+    
+}

@@ -1,0 +1,20 @@
+<form method="post" action='/upload'>
+    <input type="file" id="image">
+    <input type="button" id="submit">
+</form>
+
+<script>
+    document.getElementById('submit').addEventListener('click', e=>{
+        image= document.getElementById('image');
+        form = new FormData();
+        form.append('image',image.files[0] );
+        
+        
+
+        fetch('/upload/photos', {
+            method: 'post',
+             body: form
+        });
+        
+    })
+</script>

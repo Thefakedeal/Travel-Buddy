@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup</title>
+    <link rel="stylesheet" href="styles/login.css">
+</head>
+<body>
+        <img src="images/travelbuddy.png" alt="Travel Buddy" id="icon" >
+        <form action="/signup" method="post" class="input">
+            <p id="message" style="color: red;"></p>
+            <a href="#">Back To Menu</a>
+            <input type="email" name="email" id="email" placeholder="E-mail" required>
+            <input type="text" name="name" id="name" placeholder="Full Name" required>
+            <input type="password" name="password" id="password" minlength="6" placeholder="Password" required>
+            <input type="password" name="repassword" id="repassword" minlength="6" placeholder="Re-type Password" required>
+            <input type="submit" value="Signup">
+            <a href="../login">Already A User?</a>
+        </form>
+</body>
+
+<script>
+    form= document.querySelector(".input");
+    p= document.getElementById('message');
+    form.addEventListener('submit', async e=>{
+        e.preventDefault();
+        const email= document.getElementById('email');
+        const name= document.getElementById('name');
+        const password= document.getElementById('password');
+        const repassword= document.getElementById('repassword');
+        if(password.value!== repassword.value){
+            p.innerHTML= "Passwords don't match";
+            repassword.style.borderColor='red';
+            return;
+        }
+
+        const credentials={
+            email: email.value,
+            name: name.value,
+            password: password.value
+        }
+    
+        response= await fetch('/signup', {
+            method: 'POST',
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(credentials)
+        });
+        
+        if(response.status===200){
+            location= '../'
+        }
+        else if(response.status===403){
+            email.style.borderColor='red';
+            p.innerHTML="Email Already Exists";
+        }
+        else{
+            alert(await response.text())
+        }
+    })
+
+</script>
+</html>

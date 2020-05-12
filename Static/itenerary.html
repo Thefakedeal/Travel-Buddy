@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Travel">
+    <meta name="keywords" content="Travel|Dharan|Travelling|Travel Guide| Travel App| Dharan Travelling| Nepal| Nepal Travelling">
+    
+    <link rel="stylesheet" href="/styles/placesStyle.css">
+
+    <link rel="stylesheet" href="/styles/itenerary.css">
+
+    <link rel="stylesheet" href="/styles/leaflet.css"/>
+
+    
+
+    <title>Route</title>
+</head>
+<body>
+   <header>
+       <nav>
+       <a class="button" id="goBack" href="./../iteneraries">
+                <svg xmlns="http://www.w3.org/2000/svg" width="26.552" height="21.272" viewBox="0 0 26.552 21.272"><g transform="translate(-12.948 -27.239)"><line x1="24.375" transform="translate(15.125 37.25)" fill="none" stroke="#fff" stroke-width="4"/><line x2="8.125" y2="10" transform="translate(15.125 37.25)" fill="none" stroke="#fff" stroke-width="4"/><line y1="10" x2="8.125" transform="translate(14.5 28.5)" fill="none" stroke="#fff" stroke-width="4"/></g></svg>
+       </a>
+
+        <h1 id="title"> Itenerary </h1>
+
+        </nav>
+                        
+       
+   </header>
+   
+   
+   <main>
+       
+       <div id="map"></div>
+
+      
+       
+       <div class="content">
+           <div class="wrapper">
+               <p id= "description"></p>
+               <ul id="placeList">
+                   <li> Places </li>
+               </ul>
+               <h1 align=center id='loading'>  Loading....</h1>
+               <button id="navigate" onclick="getRoute()" disabled>  Navigate</button>
+               <div class="images"></div>
+               <button id='loadImages' onclick="loadPics()"> Load More </button>
+               <label for="file" id="upload" > Add Photos</label>
+               <input type="file" id='file' accept=".jpg,.jpeg,.webp,.png" >
+               <div class="imageview"></div>
+               <input type="button" id='submit' value='Submit' disabled>
+               
+               <div id='rating'>
+                   <input type="radio" name="rating" id="upvote" value="1" hidden>
+                   <label for="upvote"> ▲ </label>
+                   <input type="radio" name="rating" id="downvote" value="-1" hidden>
+                   <label for="downvote"> ▼ </label>
+               </div>
+               <div class="mycomment">
+               </div>
+               <div id="totalratio"></div>
+               <div id="ratio">
+                   <div id="likes"></div>
+                   <div id="dislikes"></div>
+               </div>
+               <textarea name="comment" id="comment" maxlength="250" ></textarea>
+               <button id="submit" onclick="submitComment()">Comment</button>
+               <dl class="comments" ></dl>
+
+           </div>
+       </div>
+     
+    
+</main>
+
+</body>
+
+<script  defer src="/scripts/leaflet.js"  ></script>
+
+<script defer src="/scripts/getItenerary.js"></script>
+
+<script  defer src="/scripts/mapsetup.js"></script>
+
+
+</html>

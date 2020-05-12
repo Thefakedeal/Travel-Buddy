@@ -1,0 +1,58 @@
+[
+    {
+        "id": 1,
+        "name": "Place 1",
+        "lat":26.827691384596505,
+        "lon":87.28612874927242,
+        "catagory":"Temple"
+    },
+    {
+        "id": 2,
+        "name": "Place2",
+        "lat":26.814587124450583,
+        "lon":87.27024494272834,
+        "catagory":"Garden"
+    },
+    {
+        "id": 3,
+        "name": "Place3",
+        "lat":26.8029376212739,
+        "lon":87.28861864327123,
+        "catagory":"Temple"
+    },
+    {
+        "id": 4,
+        "name": "Place4",
+        "lat":26.812058057721373,
+        "lon":87.29660347575017,
+        "catagory":"Home"
+    },
+    {
+        "id": 5,
+        "name": "Place5",
+        "lat":26.81788249037317,
+        "lon":87.28501258989365,
+        "catagory":"School"
+    },
+    {
+        "id": 6,
+        "name": "Place6",
+        "lat":26.823629992334112,
+        "lon":87.27402271293344,
+        "catagory":"Palace"
+    },
+    {
+        "id": 7,
+        "name": "Place7",
+        "lat":26.807382967654465,
+        "lon":87.27359342086466,
+        "catagory":"Carpool"
+    },
+    {
+        "id": 8,
+        "name": "Place8",
+        "lat":26.821407659474556,
+        "lon":87.29832064402518,
+        "catagory":"Garden"
+    }
+]

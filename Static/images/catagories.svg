@@ -1,0 +1,15 @@
+
+
+<svg width="215" height="215">
+		<rect  x="338" y="179" fill="#ffffff" stroke-opacity="0" width="74" height="74"/>
+		<rect  x="338" y="279" fill="#ffffff" stroke-opacity="0" width="74" height="74"/>
+		<rect  x="338" y="379" fill="#ffffff" stroke-opacity="0" width="74" height="74"/>
+		<rect  x="438" y="179" fill="#ffffff" stroke-opacity="0" width="74" height="74"/>
+		<rect  x="438" y="279" fill="#ffffff" stroke-opacity="0" width="74" height="74"/>
+		<rect  x="438" y="379" fill="#ffffff" stroke-opacity="0" width="74" height="74"/>
+		<rect  x="538" y="179" fill="#ffffff" stroke-opacity="0" width="74" height="74"/>
+		<rect  x="538" y="279" fill="#ffffff" stroke-opacity="0" width="74" height="74"/>
+		<rect  x="538" y="379" fill="#ffffff" stroke-opacity="0" width="74" height="74"/>
+		<circle  cx="475" cy="316" fill-opacity="0" stroke="ffffff" class="circleClass" r="214"/>
+
+</svg>

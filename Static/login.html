@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="styles/login.css">
+</head>
+<body>
+        <img src="images/travelbuddy.png" alt="Travel Buddy" id="icon" >
+        <form action="/login" method="post" class="input">
+            <p id="message" style="color: red;"></p>
+            <a href="../">Back To Menu</a>
+            <input type="email" name="email" id="email" placeholder="E-mail" required>
+            <input type="password" name="password" id="password" minlength="6" placeholder="Password" required>
+            <input type="submit" value="Login">
+            <a href="#">Forgot Password?</a>
+            <a href="../signup">Not A User?</a>
+        </form>
+</body>
+
+<script>
+    form= document.querySelector(".input");
+    p= document.getElementById('message');
+    form.addEventListener('submit', async e=>{
+        e.preventDefault();
+        const email= document.getElementById('email');
+        const password= document.getElementById('password');
+        const credentials={
+            email: email.value,
+            password: password.value
+        }
+    
+        response= await fetch('/login', {
+            method: 'POST',
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(credentials)
+        });
+        if(response.status===200){
+            location= '../'
+        }
+        else if(response.status===404){
+            email.style.borderColor='red';
+            p.innerHTML="Email Doesn't Exist";
+        }
+        else if(response.status===403){
+            password.style.borderColor='red';
+            p.innerHTML="Wrong Password";
+            
+        }
+        else{
+            alert(await response.text())
+        }
+    })
+
+</script>
+</html>

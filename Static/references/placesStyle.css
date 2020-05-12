@@ -1,0 +1,48 @@
+
+aside{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: fixed;
+    width: var(--aside-width);
+    top: var(--nav-height);
+    left: 0px;
+    height:var(--main-height);
+    background-color: var(--primary-color);
+    transition: 0.2s ease-in-out;
+}
+
+@media only screen and (max-width:768px){
+    
+    aside{
+        display: none;
+        width: 100vw;
+    }
+
+}
+
+#showCatagories{
+    display: none;
+}
+
+@media only screen and (max-width:768px){
+    #showCatagories{
+        display: block;
+    }
+}
+
+
+
+
+input[type='radio']{
+    display: none;
+}
+
+aside label{
+    padding: 1vh;
+    width: calc(100% - 2vh);
+}
+
+aside label:hover{
+    background-color:var(--primary-color-dark) ;
+}

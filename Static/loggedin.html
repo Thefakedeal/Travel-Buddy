@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logged In</title>
+    <link rel="stylesheet" href="styles/login.css">
+</head>
+<body>
+        <img src="images/travelbuddy.png" alt="Travel Buddy" id="icon" >
+        <div class="input">
+            <a href="../">Back To Menu</a>
+            <span> You are Logged In.</span>
+            <button onclick="logout()">Log Out</button>
+        </div>
+</body>
+    <script>
+        function logout(){
+            fetch('/logout',{
+                method: 'POST'
+            });
+            location='../'
+        }
+    </script>
+</html>

@@ -1,0 +1,31 @@
+h2{
+    font-weight: normal;
+}
+
+nav{
+    display: flex;
+    height: var(--nav-height);
+    width: 100vw;
+    position: fixed;
+    align-items: center;
+    justify-content: space-between;
+    top: 0em;
+    left: 0em;
+    background-color: var(--primary-color);
+}
+
+.button{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    outline: none;
+    transition: 0.2s ease-in-out;
+}
+
+#title{
+    margin-right: auto;
+    margin-left: auto;
+    font-size: 25px;
+}

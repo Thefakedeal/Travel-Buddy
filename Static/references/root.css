@@ -1,0 +1,30 @@
+:root{
+    --primary-color: #247BA0;
+    --primary-color-dark: rgb(19, 100, 134);
+    --secondary-color: #ffffff;
+    --tertiary-color: #000000;
+    --nav-height: 2rem;
+    --aside-width: 20vw;
+    --main-height: calc(100vh - var(--nav-height));
+    color: var(--secondary-color);
+    font-size: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0px;
+    padding: 0px;
+}
+
+::-webkit-scrollbar{
+    width: 5px;
+}
+
+::-webkit-scrollbar-track{
+    background: var(--primary-color);
+}
+
+::-webkit-scrollbar-thumb{
+    background-color: var(--tertiary-color)
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background-color: var(--tertiary-color)
+}
