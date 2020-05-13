@@ -154,15 +154,16 @@ async function loadPics(){
 }
 
 
-rating= document.getElementsByName('rating');
+const myRatingElement= document.getElementsByName('rating');
 
-rating.forEach(vote=>
+myRatingElement.forEach(vote=>
     {
-        vote.addEventListener('change', async e=>{
-            likes= document.querySelector('input[name="rating"]:checked').value;
+        vote.addEventListener('click', async (e)=>{
+            const clickedButton= e.target;
+            let value= clickedButton.value;
             action={
                 placeID: placeID,
-                likes: likes
+                likes: value
             }
             fetch('/rating/place/vote',{
                 method: 'POST',

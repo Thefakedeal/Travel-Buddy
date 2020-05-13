@@ -122,6 +122,12 @@
     color: gold;
 }
 
+#rating input[type='checkbox'] + label{
+    font-size: 60px;
+}
+#rating input[type='checkbox']:checked + label{
+    color: gold;
+}
 
 #navigate{
     display: flex;
