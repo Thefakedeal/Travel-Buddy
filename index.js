@@ -31,7 +31,7 @@ app.use('/upload',express.json({limit: '10mb'}));
 app.use(file_upload());
 app.use('/upload',express.urlencoded({extended:false}));
 app.use('/upload', upload_rate_limit);
-app.use('/api', api_rate_limit);
+// app.use('/api', api_rate_limit);
 
 app.use(xss());
 
