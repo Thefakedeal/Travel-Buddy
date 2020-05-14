@@ -6,6 +6,7 @@ file= document.getElementById('file');
 imageview= document.querySelector('.imageview');
 const submitPhotos=document.getElementById('submitPhotos');
 sendphoto= new FormData();
+const favourite = document.getElementById('favourite');
 
 
 displayPlaceData(placeID);
@@ -13,6 +14,7 @@ displayLikes(placeID);
 displayComments(placeID)
 displayMyReview(placeID);
 displayImages(placeID);
+displayFavourite(placeID);
 
 
 function displayMyReview(placeID){
@@ -44,22 +46,54 @@ function displayMyReview(placeID){
 
 function getMyReview(placeID){
     return fetch(`/rating/place/myrating?placeID=${placeID}`)
-        .then((response)=>{
-            if(response.status===200){
-                return response.json();
+        .then(response=>{
+            if(response.ok){
+                return response.json()
             }
             else{
-                return [{likes: 0, comment: null}];
+                throw new Error()
             }
         })
-        .then((rating)=>{
-            return rating[0];
+        .then(rating=>{
+            return {likes: parseInt(rating[0].likes) || 0, comment: rating[0].comment || null}
         })
         .catch(err=>{
-            console.log(err);
-            return {likes: 0, comment: null};
+            return{ likes: 0, comment: null}
+        })      
+}
+
+function displayFavourite(placeID){
+    getFavourite(placeID)
+        .then(response=>{
+            if(response.favourite===1){
+                favourite.checked=true;
+            }
         })
- }
+        .catch(err=>{
+            favourite.checked=false;
+        })
+}
+
+function getFavourite(placeID){
+    return new Promise((resolve,reject)=>{
+        fetch(`/favourite/place?placeID=${placeID}`)
+            .then(response=>{
+              if(response.ok){
+                  return response.json()
+              }
+              else{
+                  throw Error(response.statusText)
+              } 
+            })
+            .then(status=>{
+                resolve({favourite: parseInt(status.favourite)})
+            })
+            .catch(err=>{
+                reject(err)
+            })
+
+    })
+}
 
 
 
@@ -76,10 +110,15 @@ function displayPlaceData(placeID){
             div.parentNode.removeChild(div);
             addMarker(place);
         })
+        .catch(err=>{
+            alert('Something Went Wrong');
+            location= '../';
+        })
 }
 
 function getPlaceData(placeID){
-    return fetch(`/api/places/place?placeID=${placeID}`)
+    return new Promise((resolve, reject)=>{
+    fetch(`/api/places/place?placeID=${placeID}`)
         .then((response)=>{
             if(response.ok){
                 return response.json();
@@ -90,22 +129,20 @@ function getPlaceData(placeID){
         })
         .then((place)=>{
             const {placeID, name,description, lat, lon} = place;
-            return {
+            const returnValue= {
                 placeID,
                 name,
                 description,
                 lat,
                 lon
             }
+            resolve(returnValue);
         })
         .catch((err)=>{
-            alert('Something Went Wrong');
-            location= '../';
-            return {
-                placeID: null, name: null, description: null, lat: null, lon: null
-            }
-
+            reject(err);
         })
+
+    })
 }
 
 function displayComments(placeID)
@@ -122,19 +159,19 @@ function displayComments(placeID)
 }
 
 
-function getComments(placeID){
-    return fetch(`/rating/place/comments?placeID=${placeID}`)
-        .then(response=>{
-            if(response.ok){
-                return response.json()
-            }
-            else{
-                throw new Error()
-            }
-        })
-        .catch(err=>{
-            return [];
-        })
+async function getComments(placeID){
+    try {
+        const response = await fetch(`/rating/place/comments?placeID=${placeID}`);
+        if (response.ok) {
+            return response.json();
+        }
+        else {
+            throw new Error();
+        }
+    }
+    catch (err) {
+        return [];
+    }
         
 }
 
@@ -151,19 +188,19 @@ function displayImages(placeID){
         })
 }
 
-function getImage(placeID,number=0){
-    return fetch(`/api/places/images?placeID=${placeID}&number=${number}`)
-        .then(response=>{
-            if(response.ok){
-                return response.json();
-            }
-            else{
-                throw new Error();
-            }
-        })
-        .catch(err=>{
-            return [];
-        })
+async function getImage(placeID,number=0){
+    try {
+        const response = await fetch(`/api/places/images?placeID=${placeID}&number=${number}`);
+        if (response.ok) {
+            return response.json();
+        }
+        else {
+            throw new Error();
+        }
+    }
+    catch (err) {
+        return [];
+    }
 }
 
 const loadImages= document.getElementById('loadImages');
@@ -242,36 +279,59 @@ submitPhotos.addEventListener('click', async e=>{
     }
 })
 
-async function getRoute(){
+const navigate= document.getElementById('navigate');
+
+navigate.addEventListener('click', (e)=>{
     if(!sessionStorage.getItem('location')){
         alert("Please Allow Location");
         return;
     }
-    [mylat, mylon]= JSON.parse(sessionStorage.getItem('location'));
-    response= await fetch(`/navigate/place?placeID=${placeID}&mylat=${mylat}&mylon=${mylon}`);
-    if(response.status===200){
-        coordinates= await response.json();
-        let routes=[];
-        coordinates.forEach(coordinate => {
-            routes= [...routes, [coordinate[1], coordinate[0]]];
-        });
-        polyline = L.polyline(routes, {color: 'red'}).addTo(mymap);
-      
-    }
-    else{
-        alert(await response.text());
-    }
-    myposition=L.marker([mylat,mylon]).addTo(mymap).bindPopup(`Your Location`);
-    mymap.panTo([mylat,mylon],16);
-}
- 
+    const myLocation= JSON.parse(sessionStorage.getItem('location'));
+    getRoute(placeID,myLocation)
+        .then(coordinates=>{
+            const polyline = L.polyline(coordinates, {color: 'red'}).addTo(mymap);
+            const myposition=L.marker(myLocation).addTo(mymap).bindPopup(`Your Location`);
+            mymap.panTo(myLocation,16);
+        })
+        .catch(err=>{
+            alert(err)
+        })
+})
 
+function getRoute(placeID, myLocation=[]){
+    const [mylat,mylon]=myLocation;
+    return new Promise((resolve,reject)=>{
+        fetch(`/navigate/place?placeID=${placeID}&mylat=${mylat}&mylon=${mylon}`)
+            .then(response=>{
+                if(response.ok){
+                    return response.json()
+                }
+                else{
+                    response.text()
+                        .then(text=>{
+                            reject(text);
+                        })
+                }
+            })
+            .then(coordinates=>{
+                let coordinatesSorted=[];
+                coordinates.forEach(coordinate => {
+                coordinatesSorted= [...coordinatesSorted, [parseFloat(coordinate[1]), parseFloat(coordinate[0])]];
+                });
+                resolve(coordinatesSorted);
+            })
+            .catch(err=>{
+                console.log(err);
+            })
+            
+    })
+}
 
 const myRatingElement= document.getElementsByName('rating');
 
 myRatingElement.forEach(vote=>
     {
-        vote.addEventListener('click', async (e)=>{
+        vote.addEventListener('click', (e)=>{
             const myVote= parseInt(sessionStorage.getItem('myVote')) || 0;
             const clickedButton= e.target;
             const clickedValue= parseInt(clickedButton.value)
@@ -299,6 +359,25 @@ myRatingElement.forEach(vote=>
         });
     })
 
+favourite.addEventListener('change', (e)=>{
+    let star= 0;
+    if(favourite.checked){
+        star=1;
+    }
+    const action={
+        placeID,
+        star
+    }
+    fetch(`/favourite/places`,{
+        method:'POST',
+        headers:{
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(action)
+    })
+})
+
+
 const submitComment= document.getElementById('submitComment');
 
 
@@ -308,18 +387,12 @@ submitComment.addEventListener('click', (e)=>{
 
     postComment(placeID, comment.value)
         .then((response)=>{
-            if(response.ok){
-                comment.value='';
-                displayComments(placeID);
-            }
-            else if(response.status===403){
-                response.text()
-                    .then(value=>alert(value))
-            }
-            else{
-                alert('Something Went Wrong')
-            }
-        })     
+            comment.value='';
+            displayComments(placeID); 
+        }) 
+        .catch(text=>{
+            alert(text);
+        })   
 
 })
 
@@ -329,17 +402,29 @@ function postComment(placeID, comment){
         placeID,
         comment
     }
-    return fetch('/rating/place/comment',{
-        method: 'POST',
-        headers:{
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(action)
+    return new Promise(async (resolve,reject)=>{
+        try {
+            const response = await fetch('/rating/place/comment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(action)
+            });
+            if (response.ok) {
+                resolve();
+            }
+            else if (response.status === 403) {
+                response.text()
+                    .then(text => {
+                        reject(text);
+                    });
+            }
+        }
+        catch (err) {
+            console.log(err);
+        }
     })
-    .then(response=>{
-       return response;
-    })
-    
 }
 
 
@@ -361,38 +446,20 @@ function displayLikes(placeID){
 }
 
 
-function getLikes(placeID){
-    return fetch(`/rating/place/likes?placeID=${placeID}`)
+async function getLikes(placeID){
+   return fetch(`/rating/place/likes?placeID=${placeID}`)
         .then(response=>{
-            if(response.ok){
-                return response.json()
+            if (response.ok) {
+                return response.json();
             }
-            else{
+            else {
                 throw new Error();
             }
         })
         .then(ratio=>{
-            return { likes: parseInt(ratio.likes), dislikes: parseInt(ratio.dislikes)}
+            return { likes: parseInt(ratio.likes), dislikes: parseInt(ratio.dislikes) };
         })
-        .catch(err=>{
-            return {likes: 0, dislikes: 0}
-        })
-
+    .catch (err =>{
+         return { likes: 0, dislikes: 0 };
+    }  )
 }
-
-async function getLike(){
-        ratio= document.getElementById('ratio');
-        likes= document.getElementById('likes');
-        dislikes= document.getElementById('dislikes');
-        response = await fetch(`/rating/place/likes?placeID=${placeID}`);
-        result= await response.json();
-        likeCount= parseInt(result.likes);
-        dislikeCount= parseInt(result.dislikes);
-        totalratio= document.getElementById('totalratio');
-        totalratio.innerHTML= `Likes: <b> ${likeCount}</b> Dislikes: <b> ${dislikeCount} </b>`
-        if(response.status===200 && (likeCount!==0 || dislikeCount!==0 )){
-            likes.style.flex= likeCount;
-            dislikes.style.flex= dislikeCount;
-            ratio.style.display= 'flex'
-        }
-    }

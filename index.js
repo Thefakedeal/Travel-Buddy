@@ -47,6 +47,7 @@ const auth       =  require('./auth')
 const rating     =  require('./rating');
 const saved      =  require('./saved')
 const del     =  require('./delete');
+const favourite= require('./favourite');
 
 
 // Serving Images
@@ -67,6 +68,7 @@ app.use('/navigate', navigate); // Returns Navigation Data
 app.use('/rating', rating); //Takes User Input of Ratings
 app.use('/saved', saved); // For User Saved places and iteneraries
 app.use('/delete', del); // For User Saved places and iteneraries
+app.use('/favourite', favourite); // For User Saved places and iteneraries
 
 app.get('*/styles/:style', (req, res)=>{
     const {style}= req.params;
