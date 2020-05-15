@@ -3,22 +3,22 @@ const urlSearch= new URLSearchParams(location.search);
 const iteneraryID=urlSearch.get('iteneraryID');
 
 //Global Variables
-let number= 0;
-let markerLayer=[];
-let currentLocation;
-let sendphoto= new FormData();
-let myVote= 0;
+let number= 0; //iteration of how many times setrs of image has been requested
+let markerLayer=[]; //collection of markers for different places
+let currentLocationMarker; //marker for current live location
+let sendphoto= new FormData(); //form where photos to be uploaded are added
+let myVote= 0; // upvote(1) downvote(-1) or none(0) 
 
 
 //HTML ELEMENTS
-const loadImages= document.getElementById('loadImages');
-const myRatingElement= document.getElementsByName('rating');
-const submitComment= document.getElementById('submitComment');
-const navigate= document.getElementById('navigate');
-const favourite= document.getElementById('favourite');
-const file= document.getElementById('file');
-const imageview= document.querySelector('.imageview');
-const submitPhotos=document.getElementById('submitPhotos');
+const loadImages= document.getElementById('loadImages'); //load more sets of images
+const myRatingElement= document.getElementsByName('rating'); // Upvote and Downvote radio buttons
+const submitComment= document.getElementById('submitComment'); //submit button for posting comment
+const navigate= document.getElementById('navigate'); //to get navigation routes
+const favourite= document.getElementById('favourite');  //checkbox showing if place is favourited by user or not
+const file= document.getElementById('file'); //loads images to be updated
+const imageview= document.querySelector('.imageview'); //for images about to be uploaded by user
+const submitPhotos=document.getElementById('submitPhotos'); //submit button for image upload
 
 //Functions Initialized On page load
 displayIteneraryData(iteneraryID)
@@ -35,7 +35,6 @@ function setMyVote(vote){
 }
 
 //miscellaneous functions used to create and delete html/map elements
-
 function displayMyLocation(){
     getCurrentLocation()
     .then(myLocation=>{
@@ -52,10 +51,10 @@ function displayMyLocation(){
 function displayCurrentLocation(){
     getCurrentLocation()
     .then(([lat,lon])=>{
-            if(currentLocation){
-                mymap.removeLayer(currentLocation);
+            if(currentLocationMarker){
+                mymap.removeLayer(currentLocationMarker);
             }
-            currentLocation= L.marker([lat,lon]).addTo(mymap).bindPopup(`Current Postion`).openPopup();
+            currentLocationMarker= L.marker([lat,lon]).addTo(mymap).bindPopup(`Current Postion`).openPopup();
         })       
 }
 
@@ -86,6 +85,7 @@ function removePhoto(id){
     item.parentNode.removeChild(item);
     sendphoto.delete(id);
 } 
+
 //Functions Used to display datas fetched from network request
 
 function displayIteneraryData(iteneraryID){

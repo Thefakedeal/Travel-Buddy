@@ -3,8 +3,9 @@ const urlSearch= new URLSearchParams(location.search);
 const placeID=urlSearch.get('placeID')
 
 //Global Variables
-let number= 0; //iteration of how many times more photos have been requested
+let number= 0; //iteration of how many sets of images have been requested
 let sendphoto= new FormData(); //form to send photos
+let currentLocationMarker; //Marker for current live location
 let myVote= 0; //upvote(1) or downvote(-1), if its none its value is 0
 
 //HTML ELEMENTS
@@ -14,7 +15,7 @@ const submitPhotos=document.getElementById('submitPhotos'); //submit button for 
 const submitComment= document.getElementById('submitComment'); //submit button for posting comment
 const myRatingElement= document.getElementsByName('rating'); // Upvote and Downvote radio buttons
 const navigate= document.getElementById('navigate'); //to get navigation routes
-const loadImages= document.getElementById('loadImages'); //load more images
+const loadImages= document.getElementById('loadImages'); //load more sets of images
 const favourite = document.getElementById('favourite'); //checkbox showing if place is favourited by user or not
 
 //Functions initialized on page load
@@ -61,10 +62,10 @@ function displayMyLocation(){
 function displayCurrentLocation(){
     getCurrentLocation()
     .then(([lat,lon])=>{
-            if(currentLocation){
-                mymap.removeLayer(currentLocation);
+            if(currentLocationMarker){
+                mymap.removeLayer(currentLocationMarker);
             }
-            currentLocation= L.marker([lat,lon]).addTo(mymap).bindPopup(`Current Postion`).openPopup();
+            currentLocationMarker= L.marker([lat,lon]).addTo(mymap).bindPopup(`Current Postion`).openPopup();
         })       
 }
 
