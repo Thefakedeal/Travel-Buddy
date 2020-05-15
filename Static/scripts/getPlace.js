@@ -368,7 +368,7 @@ favourite.addEventListener('change', (e)=>{
         placeID,
         star
     }
-    fetch(`/favourite/places`,{
+    fetch(`/favourite/place`,{
         method:'POST',
         headers:{
             'Content-Type': 'application/json'

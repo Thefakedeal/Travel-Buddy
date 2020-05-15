@@ -1,13 +1,14 @@
-let urlSearch= new URLSearchParams(location.search);
-let iteneraryID=urlSearch.get('iteneraryID');
+const urlSearch= new URLSearchParams(location.search);
+const iteneraryID=urlSearch.get('iteneraryID');
 let number= 0;
 let markerLayer=[];
-let placeList= document.getElementById('placeList');
+const placeList= document.getElementById('placeList');
 let currentLocation;
+const favourite= document.getElementById('favourite');
 
-let file= document.getElementById('file');
-let imageview= document.querySelector('.imageview');
-let submitButton=document.getElementById('submit');
+const file= document.getElementById('file');
+const imageview= document.querySelector('.imageview');
+const submitButton=document.getElementById('submit');
 let sendphoto= new FormData();
 
 getCurrentLocation()
@@ -25,6 +26,7 @@ getImage(iteneraryID);
 getComments();
 getLikes();
 myRating();
+displayFavourite(iteneraryID);
 
 async function getItenerary(iteneraryID){
     let response = await fetch(`/api/iteneraries/itenerary?iteneraryID=${iteneraryID}`);
@@ -306,3 +308,58 @@ function displayCurrentLocation(){
         
 }
 
+
+//For Listing and unlisting the itenerary as a favourite.
+
+favourite.addEventListener('change', (e)=>{
+    let star= 0;
+    if(favourite.checked){
+        star=1;
+    }
+    const action={
+        iteneraryID,
+        star
+    }
+    fetch(`/favourite/itenerary`,{
+        method:'POST',
+        headers:{
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(action)
+    })
+})
+
+//To Display if the itenerary is in user's favourite or not
+
+function displayFavourite(iteneraryID){
+    getFavourite(iteneraryID)
+        .then(response=>{
+            if(response.favourite===1){
+                favourite.checked=true;
+            }
+        })
+        .catch(err=>{
+            favourite.checked=false;
+        })
+}
+
+function getFavourite(iteneraryID){
+    return new Promise((resolve,reject)=>{
+        fetch(`/favourite/itenerary?iteneraryID=${iteneraryID}`)
+            .then(response=>{
+              if(response.ok){
+                  return response.json()
+              }
+              else{
+                  throw Error(response.statusText)
+              } 
+            })
+            .then(status=>{
+                resolve({favourite: parseInt(status.favourite)})
+            })
+            .catch(err=>{
+                reject(err)
+            })
+
+    })
+}

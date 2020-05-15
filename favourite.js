@@ -35,7 +35,7 @@ router.get('/itenerararies', logincheck, (req,res)=>{
         })
 })
 
-router.post('/places', logincheck, (req,res)=>{
+router.post('/place', logincheck, (req,res)=>{
     const { star, placeID}= req.body;
     const userID= req.session.user;
     const favourite= parseInt(star);
@@ -57,7 +57,7 @@ router.post('/places', logincheck, (req,res)=>{
 })
 
 router.post('/itenerary', logincheck, (req,res)=>{
-    const { star, placeID: iteneraryID}= req.body;
+    const { star, iteneraryID}= req.body;
     const userID= req.session.user;
     const favourite= parseInt(star);
     if(favourite===1){
