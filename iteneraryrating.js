@@ -38,7 +38,6 @@ router.post('/comment',logincheck, (req,res)=>{
     const {comment, iteneraryID} = req.body;
     const userID = req.session.user;
     const ratingID= uuid.v4();
-
     let query= 'INSERT INTO iteneraryRating(ratingID, iteneraryID, userID, comment) VALUES(?,?,?,?)';
     sqlQuery(query,[ratingID,iteneraryID,userID,comment])
         .then((result)=>{
@@ -46,7 +45,7 @@ router.post('/comment',logincheck, (req,res)=>{
         })
         .catch(err=>{
             return sqlQuery('UPDATE iteneraryRating SET comment=? WHERE iteneraryID=? AND userID=?',[comment,iteneraryID,userID]);
-        })
+        }) 
         .then((result)=>{
             res.status(200).send('Comment Succesful');
         })

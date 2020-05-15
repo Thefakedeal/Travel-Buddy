@@ -14,7 +14,7 @@
 
     
 
-    <title>Route</title>
+    <title>Itenerary</title>
 </head>
 <body>
    <header>
@@ -44,14 +44,14 @@
                    <li> Places </li>
                </ul>
                <h1 align=center id='loading'>  Loading....</h1>
-               <button id="navigate" onclick="getRoute()" disabled>  Navigate</button>
+               <button id="navigate" disabled>  Navigate</button>
                <div class="images"></div>
-               <button id='loadImages' onclick="loadPics()"> Load More </button>
+               <button id='loadImages'> Load More </button>
                <label for="file" id="upload" > Add Photos</label>
                <input type="file" id='file' accept=".jpg,.jpeg,.webp,.png" >
                <div class="imageview"></div>
-               <input type="button" id='submit' value='Submit' disabled>
-               
+               <input type="button" class='submit' value='Submit' id='submitPhotos' disabled>
+                
                <div id='rating'>
                    <input type="radio" name="rating" id="upvote" value="1" hidden>
                    <label for="upvote"> ▲ </label>
@@ -68,7 +68,7 @@
                    <div id="dislikes"></div>
                </div>
                <textarea name="comment" id="comment" maxlength="250" ></textarea>
-               <button id="submit" onclick="submitComment()">Comment</button>
+               <button class="submit" id="submitComment">Comment</button>
                <dl class="comments" ></dl>
 
            </div>

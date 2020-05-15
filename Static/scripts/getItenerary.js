@@ -5,11 +5,11 @@ let markerLayer=[];
 const placeList= document.getElementById('placeList');
 let currentLocation;
 const favourite= document.getElementById('favourite');
-
 const file= document.getElementById('file');
 const imageview= document.querySelector('.imageview');
-const submitButton=document.getElementById('submit');
+const submitPhotos=document.getElementById('submitPhotos');
 let sendphoto= new FormData();
+let myVote= 0;
 
 getCurrentLocation()
     .then(mylocation=>{
@@ -21,49 +21,158 @@ window.onload= ()=>{
     const myposition=L.marker(myLocation).addTo(mymap).bindPopup(`Starting Postiton`).openPopup();
 }
 
-getItenerary(iteneraryID);
-getImage(iteneraryID);
-getComments();
-getLikes();
-myRating();
+// getItenerary(iteneraryID);
+displayIteneraryData(iteneraryID)
+// getImage(iteneraryID);
+displayImages(iteneraryID);
+displayComments(iteneraryID);
+// getComments();
+displayLikes(iteneraryID);
+// getLikes();
+displayMyReview(iteneraryID);
+// myRating();
 displayFavourite(iteneraryID);
 
-async function getItenerary(iteneraryID){
-    let response = await fetch(`/api/iteneraries/itenerary?iteneraryID=${iteneraryID}`);
-    if(response.status===200)
-    {
-        const {itenerary, places: placesData}= await response.json();
-        document.title= itenerary.name;
-        document.getElementById('title').innerHTML= itenerary.name;
-        document.getElementById('description').innerHTML= itenerary.description;
-        placesData.map(addPlace);
-        document.getElementById('navigate').disabled=false;
-        var div = document.getElementById("loading");
-        div.parentNode.removeChild(div);
-        
-    }
-    else{
-        alert( await response.text())
-        location= '/..'
-    }
+
+function setMyVote(vote){
+    myVote= parseInt(vote);
 }
 
-
-async function getImage(iteneraryID){
-    let number=0;
-    let response = await fetch(`/api/iteneraries/images?iteneraryID=${iteneraryID}&number=${number}`);
-    if(response.status===200)
-    {   let images= document.querySelector('.images');
-        let imagesResponse= await response.json();
-        images.innerHTML = imagesResponse.map(images=>{
-            return `
-                <img src=${images}>
-            `;
-        }).join(' ');
-
-    }
+function displayMyReview(iteneraryID){
+    getMyReview(iteneraryID)
+        .then(myReview=>{
+            const button= document.querySelectorAll('input[name="rating"]');
+            const myComment= document.querySelector('.mycomment');
+            setMyVote(myReview.likes);
+               button.forEach(vote=>{
+                   if(vote.value== myReview.likes){
+                       vote.checked=true;
+                    //    sessionStorage.setItem('myVote', myReview.likes);
+                   }
+               })
+            if(myReview.comment!==null){
+                myComment.innerHTML= 
+                `   <dl>
+                        <dt> <b> You Said... </b> <dt>
+                        <dd> ${myReview.comment} </dd>
+                    </dl>
+                `
+           }
     
+        })
+        .catch((err)=>{
+            console.log(err);
+        })
 }
+
+
+function getMyReview(iteneraryID){
+    return fetch(`/rating/itenerary/myrating?iteneraryID=${iteneraryID}`)
+        .then(response=>{
+            if(response.ok){
+                return response.json()
+            }
+            else{
+                throw new Error()
+            }
+        })
+        .then(rating=>{
+            return {likes: parseInt(rating[0].likes) || 0, comment: rating[0].comment || null}
+        })
+        .catch(err=>{
+            return{ likes: 0, comment: null}
+        })      
+}
+
+function displayIteneraryData(iteneraryID){
+    getItenerary(iteneraryID)
+        .then(({itenerary,placesData})=>{
+            document.title= itenerary.name;
+            document.getElementById('title').innerHTML= itenerary.name;
+            document.getElementById('description').innerHTML= itenerary.description;
+            placesData.map(addPlace);
+            document.getElementById('navigate').disabled=false;
+            var div = document.getElementById("loading");
+            div.parentNode.removeChild(div);
+        })
+        .catch(err=>{
+            alert('something went wrong')
+            location= '/..'
+        })
+}
+function getItenerary(iteneraryID){
+    return new Promise((resolve,reject)=>{
+        fetch(`/api/iteneraries/itenerary?iteneraryID=${iteneraryID}`)
+            .then(response=>{
+                if(response.ok){
+                    return response.json();
+                }
+                else{
+                    throw new Error()
+                }
+            })
+            .then(data=>{
+                const iteneraryData= {
+                    itenerary: data.itenerary,
+                    placesData: data.places
+                }
+                resolve(iteneraryData);
+            })
+            .catch(err=>{
+                reject(err);
+            })
+    })
+}
+
+
+// async function getItenerary(iteneraryID){
+//     let response = await fetch(`/api/iteneraries/itenerary?iteneraryID=${iteneraryID}`);
+//     if(response.status===200)
+//     {
+//         const {itenerary, places: placesData}= await response.json();
+//         document.title= itenerary.name;
+//         document.getElementById('title').innerHTML= itenerary.name;
+//         document.getElementById('description').innerHTML= itenerary.description;
+//         placesData.map(addPlace);
+//         document.getElementById('navigate').disabled=false;
+//         var div = document.getElementById("loading");
+//         div.parentNode.removeChild(div);
+        
+//     }
+//     else{
+//         alert( await response.text())
+//         location= '/..'
+//     }
+// }
+
+
+function displayImages(iteneraryID){
+    getImage(iteneraryID)
+        .then(images=>{
+            const imagesElement= document.querySelector('.images');
+            imagesElement.innerHTML = images.map(image=>{
+                return `
+                    <img src=${image}>
+                `;
+            }).join(' ');
+        })
+}
+
+async function getImage(iteneraryID,number=0){
+    try {
+        const response = await fetch(`/api/iteneraries/images?iteneraryID=${iteneraryID}&number=${number}`);
+        if (response.ok) {
+            return response.json();
+        }
+        else {
+            throw new Error();
+        }
+    }
+    catch (err) {
+        return [];
+    }
+}
+
 
 function addMarker({lat, lon}){
     let marker=L.marker([lat,lon]).addTo(mymap);
@@ -78,7 +187,7 @@ function addMarker({lat, lon}){
 
 
 file.addEventListener('change', (e)=>{
-    submitButton.disabled= false;
+    submitPhotos.disabled= false;
     let reader= new FileReader();
         
     reader.addEventListener('load', e=>{
@@ -107,7 +216,8 @@ function removeit(id){
     sendphoto.delete(id);
 }
 
-submitButton.addEventListener('click', async e=>{
+
+submitPhotos.addEventListener('click', async e=>{
     sendphoto.set('iteneraryID',iteneraryID);
     let response= await fetch('/upload/itenerary/photos',{
         method: 'POST',
@@ -117,40 +227,49 @@ submitButton.addEventListener('click', async e=>{
     alert(message);
     if(response.status===200){
         imageview.innerHTML='';
-        submitButton.disabled=true;
+        submitPhotos.disabled=true;
         sendphoto = new FormData();
-        getImage(iteneraryID);
+        displayImages(iteneraryID);
     }
 })
 
+const loadImages= document.getElementById('loadImages');
 
- 
-
-async function loadPics(){
-    number++;
-    let response = await fetch(`/api/iteneraries/images?iteneraryID=${iteneraryID}&number=${number}`);
-    if(response.status===200)
-    {   let images= document.querySelector('.images');
-        let imagesResponse= await response.json();
-        images.innerHTML += imagesResponse.map(images=>{
-            return `
-                <img src=${images}>
-            `;
+loadImages.addEventListener('click', (e)=>{
+    number= number+1;
+    getImage(iteneraryID,number)
+        .then(images=>{
+            const imagesElement= document.querySelector('.images');
+            imagesElement.innerHTML = images.map(image=>{
+                return `
+                <img src=${image}>
+                `;
         }).join(' ');
+    })
+})
 
-    }
-}
 
+const myRatingElement= document.getElementsByName('rating');
 
-let rating= document.getElementsByName('rating');
-
-rating.forEach(vote=>
+myRatingElement.forEach(vote=>
     {
-        vote.addEventListener('change', async e=>{
-            let likes= document.querySelector('input[name="rating"]:checked').value;
-            let action={
+        vote.addEventListener('click', (e)=>{
+
+            const clickedButton= e.target;
+            const clickedValue= parseInt(clickedButton.value)
+            let value;
+            if(myVote===clickedValue){
+                value=0;
+                clickedButton.checked=false;
+            }
+            else{
+                value= clickedButton.value;
+            }
+
+            setMyVote(value);
+            action={
                 iteneraryID: iteneraryID,
-                likes: likes
+                likes: value
             }
             fetch('/rating/itenerary/vote',{
                 method: 'POST',
@@ -163,43 +282,122 @@ rating.forEach(vote=>
         });
     })
  
+const submitComment= document.getElementById('submitComment');
 
-   async function submitComment(){
-        let comment= document.getElementById('comment');
-        let action= {
-            iteneraryID: iteneraryID,
-            comment: comment.value
+submitComment.addEventListener('click', (e)=>{
+    
+        const comment= document.getElementById('comment');
+        postComment(iteneraryID, comment.value)
+            .then((response)=>{
+                comment.value='';
+                displayComments(iteneraryID); 
+            }) 
+            .catch(text=>{
+                alert(text);
+            })   
+    
+    })
+    
+    
+function postComment(iteneraryID, comment){
+        const action= {
+            iteneraryID,
+            comment
         }
-        let response= await fetch('/rating/itenerary/comment',{
-            method: 'POST',
-            headers:{
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(action)
-        })
-        if(response.status===200){
-            comment.value='';
-            getComments()
-            myRating()
+        return new Promise(async (resolve,reject)=>{
+            try {
+                const response = await fetch('/rating/itenerary/comment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(action)
+                });
+                if (response.ok) {
+                    resolve();
+                }
+                else if (response.status === 403) {
+                    response.text()
+                        .then(text => {
+                            reject(text);
+                        });
+                }
+            }
+            catch (err) {
+                console.log(err);
+            }
+    })
+}
+
+
+    function displayComments(iteneraryID)
+    {
+        getComments(iteneraryID)
+            .then(comments=>{
+                const commentElements= document.querySelector('.comments')
+                commentElements.innerHTML= comments.map(comment=>{
+                    return `
+                    <dt> <b> ${comment.name} </b>  <dt>
+                    <dd> ${comment.comment} </dd>`;
+                })
+            })
+    }
+    
+    
+    async function getComments(iteneraryID){
+        try {
+            const response = await fetch(`/rating/itenerary/comments?iteneraryID=${iteneraryID}`);
+            if (response.ok) {
+                return response.json();
+            }
+            else {
+                throw new Error();
+            }
         }
-        else if(response.status===403){
-            alert(await response.text())
+        catch (err) {
+            return [];
         }
+            
+    }
+
+    function displayLikes(iteneraryID){
+        getLikes(iteneraryID)
+            .then((ratio)=>{
+                const ratioElement= document.getElementById('ratio');
+                const likes= document.getElementById('likes');
+                const dislikes= document.getElementById('dislikes');
+                const totalratio= document.getElementById('totalratio');
+                totalratio.innerHTML= `Likes: <b> ${ratio.likes}</b> Dislikes: <b> ${ratio.dislikes} </b>`
+                if(ratio.likes!==0 || ratio.dislikes!==0 ){
+                    likes.style.flex= ratio.likes;
+                    dislikes.style.flex= ratio.dislikes;
+                    ratioElement.style.display= 'flex'
+            }
         
+            })      
     }
-
-    async function getComments(){
-        let comments= document.querySelector('.comments')
-        let response = await fetch(`/rating/itenerary/comments?iteneraryID=${iteneraryID}`);
-        let result= await response.json();
-        comments.innerHTML= result.map(comment=>{
-            return `
-            <dt> <b> ${comment.name} </b>  <dt>
-            <dd> ${comment.comment} </dd>`;
-        }).join(' ')
+    
+    
+    async function getLikes(iteneraryID){
+       return fetch(`/rating/itenerary/likes?iteneraryID=${iteneraryID}`)
+            .then(response=>{
+                if (response.ok) {
+                    return response.json();
+                }
+                else {
+                    throw new Error();
+                }
+            })
+            .then(ratio=>{
+                return { likes: parseInt(ratio.likes), dislikes: parseInt(ratio.dislikes) };
+            })
+        .catch (err =>{
+             return { likes: 0, dislikes: 0 };
+        }  )
     }
+    
 
-    async function getLikes(){
+    async function getLike(){
         let ratio= document.getElementById('ratio');
         let likes= document.getElementById('likes');
         let dislikes= document.getElementById('dislikes');
@@ -216,27 +414,6 @@ rating.forEach(vote=>
         }
     }
 
-    async function myRating(){
-       let response= await fetch(`/rating/itenerary/myrating?iteneraryID=${iteneraryID}`);
-       let myComment= document.querySelector('.mycomment');
-       if(response.status===200){
-           let rating= await response.json();
-           let button= document.querySelectorAll('input[name="rating"]');
-           button.forEach(vote=>{
-               if(vote.value== rating[0].likes){
-                   vote.checked=true
-               }
-           })
-           if(rating[0].comment.length!==0){
-                myComment.innerHTML= 
-                `   <dl>
-                        <dt> <b> You Said... </b> <dt>
-                        <dd> ${rating[0].comment} </dd>
-                    </dl>
-                `
-           }
-       }
-    }
 
 function addPlace(place){
     const {name, lat, lon}= place;
@@ -254,29 +431,56 @@ function popupMarker(id){
   
 }
 
-async function getRoute(){
+const navigate= document.getElementById('navigate');
+
+navigate.addEventListener('click', (e)=>{
     if(!sessionStorage.getItem('location')){
         alert("Please Allow Location");
         return;
     }
-    let [mylat, mylon]= JSON.parse(sessionStorage.getItem('location'));
-    let lat= parseFloat(mylat).toFixed(4);
-    let lon= parseFloat(mylon).toFixed(4);
-    let response= await fetch(`/navigate/itenerary?iteneraryID=${iteneraryID}&mylat=${lat}&mylon=${lon}`);
-    if(response.status===200){
-        let coordinates= await response.json();
-        let routes=[];
-        coordinates.forEach(coordinate => {
-            routes= [...routes, [coordinate[1], coordinate[0]]];
-        });
-        polyline = L.polyline(routes, {color: 'red'}).addTo(mymap);
-    }
-    else{
-        alert(await response.text());
-    }
-    displayCurrentLocation();
-    setInterval(displayCurrentLocation, 5000)
+    const myLocation= JSON.parse(sessionStorage.getItem('location'));
+    getRoute(iteneraryID,myLocation)
+        .then(coordinates=>{
+            const polyline = L.polyline(coordinates, {color: 'red'}).addTo(mymap);
+            const myposition=L.marker(myLocation).addTo(mymap).bindPopup(`Your Location`);
+            mymap.panTo(myLocation,16);
+            displayCurrentLocation();
+            setInterval(displayCurrentLocation, 5000)
+        })
+        .catch(err=>{
+            alert(err)
+        })
+})
+
+function getRoute(iteneraryID, myLocation=[]){
+    const [mylat,mylon]=myLocation;
+    return new Promise((resolve,reject)=>{
+        fetch(`/navigate/itenerary?iteneraryID=${iteneraryID}&mylat=${mylat}&mylon=${mylon}`)
+            .then(response=>{
+                if(response.ok){
+                    return response.json()
+                }
+                else{
+                    response.text()
+                        .then(text=>{
+                            reject(text);
+                        })
+                }
+            })
+            .then(coordinates=>{
+                let coordinatesSorted=[];
+                coordinates.forEach(coordinate => {
+                coordinatesSorted= [...coordinatesSorted, [parseFloat(coordinate[1]), parseFloat(coordinate[0])]];
+                });
+                resolve(coordinatesSorted);
+            })
+            .catch(err=>{
+                console.log(err);
+            })
+            
+    })
 }
+
 
 function getCurrentLocation(){
   return new Promise((resolve,reject)=>{
@@ -317,7 +521,7 @@ favourite.addEventListener('change', (e)=>{
         star=1;
     }
     const action={
-        iteneraryID,
+        iteneraryID: iteneraryID,
         star
     }
     fetch(`/favourite/itenerary`,{

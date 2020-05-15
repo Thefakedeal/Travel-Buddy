@@ -7,7 +7,7 @@ imageview= document.querySelector('.imageview');
 const submitPhotos=document.getElementById('submitPhotos');
 sendphoto= new FormData();
 const favourite = document.getElementById('favourite');
-
+let myVote= 0;
 
 displayPlaceData(placeID);
 displayLikes(placeID);
@@ -17,15 +17,20 @@ displayImages(placeID);
 displayFavourite(placeID);
 
 
+function setMyVote(vote){
+    myVote= parseInt(vote);
+}
+
 function displayMyReview(placeID){
     getMyReview(placeID)
         .then(myReview=>{
             const button= document.querySelectorAll('input[name="rating"]');
             const myComment= document.querySelector('.mycomment');
+            setMyVote(myReview.likes);
                button.forEach(vote=>{
                    if(vote.value== myReview.likes){
                        vote.checked=true;
-                       sessionStorage.setItem('myVote', myReview.likes);
+                    //    sessionStorage.setItem('myVote', myReview.likes);
                    }
                })
             if(myReview.comment!==null){
@@ -332,7 +337,7 @@ const myRatingElement= document.getElementsByName('rating');
 myRatingElement.forEach(vote=>
     {
         vote.addEventListener('click', (e)=>{
-            const myVote= parseInt(sessionStorage.getItem('myVote')) || 0;
+            // const myVote= parseInt(sessionStorage.getItem('myVote')) || 0;
             const clickedButton= e.target;
             const clickedValue= parseInt(clickedButton.value)
             let value;
@@ -343,7 +348,8 @@ myRatingElement.forEach(vote=>
             else{
                 value= clickedButton.value;
             }
-            sessionStorage.setItem('myVote', value);
+            // sessionStorage.setItem('myVote', value);
+            setMyVote(value);
             action={
                 placeID: placeID,
                 likes: value
@@ -365,7 +371,7 @@ favourite.addEventListener('change', (e)=>{
         star=1;
     }
     const action={
-        placeID,
+        placeID: placeID,
         star
     }
     fetch(`/favourite/place`,{
