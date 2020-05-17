@@ -12,7 +12,7 @@ function logincheck(req,res,next){
 
 }
 
-router.get('/', logincheck, (req, res)=>{
+router.get('/', (req, res)=>{
     res.sendFile(__dirname + '/Static' + '/saved.html');
 });
 

@@ -23,9 +23,9 @@ router.get('/places', logincheck, (req,res)=>{
         })
 })
 
-router.get('/itenerararies', logincheck, (req,res)=>{
+router.get('/iteneraries', logincheck, (req,res)=>{
     const userID= req.session.user;
-    sqlQuery('SELECT DISTINCT itenerary.iteneraryID, itenerary.name FROM itenerary INNER JOIN userfavouriteplaces ON itenerary.placeID= userfavouriteitenerary.placeID WHERE userfavouriteplaces.userID=?',userID)
+    sqlQuery('SELECT DISTINCT itenerary.iteneraryID, itenerary.name FROM itenerary INNER JOIN userfavouriteitenerary ON itenerary.iteneraryID= userfavouriteitenerary.iteneraryID WHERE userfavouriteitenerary.userID=?',userID)
         .then(itenerary=>{
             res.status(200).json(itenerary)
         })

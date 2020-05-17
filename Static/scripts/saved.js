@@ -1,117 +1,231 @@
+const catagoriesSelector= document.getElementById('catagories');
 const content= document.querySelector('.content');
-let catagories= document.getElementsByName('catagory');
-let placesArray=[];
-let iteneraryArray=[];
-getSavedPlaces();
 
-catagories.forEach(catagory=>
-    { 
-        catagory.addEventListener('change', async e=>{
-            catagoryValue= document.querySelector('input[name="catagory"]:checked').value;
-            if(catagoryValue==='iteneraries'){
-                getSavedIteneraries();
+
+function displayPlaces(){
+    getPlaces()
+        .then(places=>{
+            content.innerHTML = places.map(place=>{
+                const id= Math.random();
+                return `<li id="${id}">
+                <span class="placeName">${place.name}</span>
+                <span class="deleteIt" title="Delete Place" data-placeID='${place.placeID}' data-name='${place.name}' onClick="deletePlace(this)"> 🗑️ </span> 
+                </li>`
+            }).join(' ')
+        })
+        .catch(err=>{
+            alert(err);
+
+
+        })
+}
+
+function getPlaces(){
+    return new Promise((resolve, reject)=>{
+        fetch(`/api/saved/places`) 
+            .then(response=>{
+                okFlag= response.ok
+                if(response.ok) return response.json()
+                return response.text()
+            })
+            .then(placesResponse=>{
+                if(okFlag)
+                return placesResponse.map(place=>{
+                    return {placeID:place.placeID, name: place.name}
+                })
+                reject(placesResponse)
+            })
+            .then(placeArray=>{
+                resolve(placeArray)
+            })
+            .catch(err=>{
+                reject(err)
+            })
+    })
+        
+}
+
+function deletePlace(place){
+    const placeID= place.getAttribute('data-placeID');
+    const name= place.getAttribute('data-name')
+    const check= confirm(`Are You Sure You Want To Delete ${name}?`);
+    if(!check) return;
+    deletePlaceFromDatabase(placeID)
+        .then(()=>{
+            const deleteNode=place.parentNode;
+            deleteNode.parentNode.removeChild(deleteNode);
+        })
+        .catch(err=>{
+            alert(err)
+        })
+}
+
+function deletePlaceFromDatabase(placeID){
+    return new Promise((resolve,reject)=>{
+        fetch(`/delete/place?placeID=${placeID}`,{
+            method: 'DELETE',
+        })
+        .then(response=>{
+            if(response.ok){
+                resolve()
             }
-            else{
-                getSavedPlaces()
-            }
-        });
+            return response.text()
+        })
+        .then(text=>{
+            reject(text)
+        })
+        .catch(err=>{
+            console.log(err)
+        })
+    })
+}
+
+function displayIteneraries(){
+    getIteneraries()
+        .then(iteneraries=>{
+            content.innerHTML = iteneraries.map(itenerary=>{
+                const id= Math.random();
+                return `<li id="${id}">
+                <span class="placeName">${itenerary.name}</span>
+                <span class="deleteIt" title="Delete Place" onClick="deletePlace(${id,itenerary.iteneraryID})"> 🗑️ </span> 
+                </li>`
+            }).join(' ')
+        })
+}
+function getIteneraries(){
+    return new Promise((resolve, reject)=>{
+        fetch(`/api/saved/iteneraries`) 
+            .then(response=>{
+                okFlag= response.ok
+                if(response.ok) return response.json()
+                return response.text()
+            })
+            .then(itenerariesResponse=>{
+                if(okFlag)
+                return itenerariesResponse.map(itenerary=>{
+                    return {iteneraryID:itenerary.iteneraryID, name: itenerary.name}
+                })
+                reject(itenerariesResponse)
+            })
+            .then(iteneraryArray=>{
+                resolve(iteneraryArray)
+            })
+            .catch(err=>{
+                reject(err)
+            })
+    })
+}
+
+function displayFavouritePlaces(){
+    getFavouritePlaces()
+        .then(favouritePlaces=>{
+            content.innerHTML = favouritePlaces.map(favouritePlace=>{
+                const id= Math.random();
+                const starID= Math.random();
+                return `<li id="${id}">
+                <span class="placeName">${favouritePlace.name}</span>
+                <input type="checkbox" name="favourite" id="${starID}" value='1' hidden> 
+                <label for="favourite"> ★ </label> 
+                </li>`
+            })
+        })
+        .catch(err=>{
+            alert(err)
+        })
+}
+
+function getFavouritePlaces(){
+    return new Promise((resolve, reject)=>{
+        fetch(`/favourite/places`) 
+            .then(response=>{
+                okFlag= response.ok
+                if(response.ok) return response.json()
+                return response.text()
+            })
+            .then(favouritePlaceResponse=>{
+                if(okFlag)
+                return favouritePlaceResponse.map(place=>{
+                    return {placeID:place.placeID, name: place.name}
+                })
+                reject(favouritePlaceResponse)
+            })
+            .then(placeArray=>{
+                resolve(placeArray)
+            })
+            .catch(err=>{
+                reject(err)
+            })
+    })
+}
+
+function displayFavouriteIteneraries(){
+    getFavouriteIteneraries()
+    .then(favouriteIteneraries=>{
+        content.innerHTML = favouriteIteneraries.map(favouriteItenerary=>{
+            const id= Math.random();
+            return `<li id="${id}">
+            <span class="placeName">${favouriteItenerary.name}</span>
+            <span class="deleteIt" title="Delete Place" onClick="deletePlace(${id,favouriteItenerary.iteneraryID})"> 🗑️ </span> 
+            </li>`})
+
+    })
+    .catch(err=>{
+        alert(err)
     })
 
-
-async function getSavedPlaces(){
-    const response= await fetch(`api/saved/places`)
-    if(response.status!==200){
-       return alert(await response.text());
-    }
-    else{
-        result= await response.json()
-        content.innerHTML= result.map((place=>{
-            const id= Math.random();
-            placesArray= [...placesArray, {elementID: id, ...place}];
-            return `
-            <li id="${id}">
-                <span class="placeName">${place.name}</span>
-                <span class="deleteIt" title="Delete Place" onClick="deletePlace(${id})"> 🗑️ </span> 
-            </li>
-            `;
-        })).join(' ');
-    }
-       
 }
 
-
-async function getSavedIteneraries(){
-    const response= await fetch(`api/saved/itenerary`)
-    if(response.status!==200){
-       return alert(await response.text());
-    }
-    else{
-        result= await response.json()
-        content.innerHTML= result.map((itenerary=>{
-            const id= Math.random();
-            iteneraryArray= [...iteneraryArray, {elementID: id, ...itenerary}];
-            return `
-            <li id="${id}">
-                <span class="placeName">${itenerary.name}</span>
-                <span class="deleteIt" title="Delete Place" onClick="deleteItenerary(${id})"> 🗑️ </span> 
-            </li>
-            `;
-        })).join(' ');
-    }
-       
+function getFavouriteIteneraries(){
+    return new Promise((resolve, reject)=>{
+        fetch(`/favourite/iteneraries`) 
+            .then(response=>{
+                okFlag= response.ok
+                if(response.ok) return response.json()
+                return response.text()
+            })
+            .then(favouriteIteneraryResponse=>{
+                if(okFlag)
+                return favouriteIteneraryResponse.map(itenerary=>{
+                    return {iteneraryID:itenerary.iteneraryID, name: itenerary.name}
+                })
+                reject(favouriteIteneraryResponse)
+            })
+            .then(iteneraryArray=>{
+                resolve(iteneraryArray)
+            })
+            .catch(err=>{
+                reject(err)
+            })
+    })
 }
 
-async function deletePlace(elementID){
-    const place= placesArray.find(place=>{
-        return place.elementID===elementID
-    });
-    const check= confirm(`Are You Sure You Want To Delete ${place.name}?`);
-    if(!check){
-        return;
+const catagories = 
+[
+    {
+        name: 'Place',
+        action: 'displayPlaces()'
+    },
+    {
+        name: 'Itenerary',
+        action: 'displayIteneraries()'
+    },
+    {
+        name: 'Liked Places',
+        action: 'displayFavouritePlaces()'
+    },
+    {
+        name: 'Liked Iteneraries',
+        action: 'displayFavouriteIteneraries()'
     }
-    const response= await fetch(`/delete/place?placeID=${place.placeID}`,{
-        method: 'DELETE',
-    });
-
-    if(response.status===200){
-        let deletePlace= document.getElementById(place.elementID);
-        deletePlace.parentNode.removeChild(deletePlace);
-    }
-    else if(response.status===401){
-        alert(await response.text())
-    }
-    else{
-        console.log(response.status)
-        alert("Something Went Wrong")
-
-    }
+    
+]
 
 
-}
+catagories.forEach(catagory=>{
+    catagoriesSelector.innerHTML +=
+    `
+    <label for=${catagory.name.split(' ').join('_')}> <h2> ${catagory.name} </h2> </label> 
+    <input type="radio" name="catagory" id="${catagory.name.split(' ').join('_')}" onClick=${catagory.action} hidden>
+    `
+})
 
-async function deleteItenerary(elementID){
-    const itenerary= iteneraryArray.find(itenerary=>{
-        return itenerary.elementID===elementID
-    });
-    const check= confirm(`Are You Sure You Want To Delete ${itenerary.name}?`);
-    if(!check){
-        return;
-    }
-    const response= await fetch(`/delete/itenerary?iteneraryID=${itenerary.iteneraryID}`,{
-        method: 'DELETE',
-    });
-
-    if(response.status===200){
-        let deleteItenerary= document.getElementById(itenerary.elementID);
-        deleteItenerary.parentNode.removeChild(deleteItenerary);
-    }
-    else if(response.status===401){
-        alert(await response.text())
-    }
-    else{
-        console.log(response.status)
-        alert("Something Went Wrong")
-
-    }
-
-}

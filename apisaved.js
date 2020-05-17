@@ -24,7 +24,7 @@ router.get('/places', logincheck, (req,res)=>{
         })
 });
 
-router.get('/itenerary', logincheck, (req,res)=>{
+router.get('/iteneraries', logincheck, (req,res)=>{
     sqlQuery('SELECT iteneraryID,name,rank from itenerary WHERE userID=?',req.session.user)
         .then(itenerary=>{
             res.status(200).json(itenerary);
