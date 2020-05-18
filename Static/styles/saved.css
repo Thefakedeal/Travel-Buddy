@@ -1,0 +1,18 @@
+.favourite + label{
+    color: gray;
+    font-size: 40px;
+    margin: 0 20px;
+}
+
+.favourite + label:hover{
+    color: gold;
+    opacity: 0.5; 
+}
+
+.favourite + label{
+    font-size: 40px;
+}
+
+.favourite:checked + label{
+    color: gold;
+}
