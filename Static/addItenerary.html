@@ -37,15 +37,15 @@
             <form class="form" action="addPlace" method="post" id="form">
                 <input type="text" name="name" id="name" placeholder="Itenerarary Name" required>
                 <textarea name="description" id="description" maxlength="250"placeholder="Description" ></textarea>
-                <span id="placeAdder">
+                <div id="placeAdder">
                     <input type="text" name="placename" id="placeName" placeholder="Place Name">
-                    <input type="button" value="Add" id="addButton" onclick="addPlace();">
-                </span>
+                    <input type="button" value="Add" id="addButton">
+                </div>
                 <ul id="placeList"></ul>
                 <label for="file" id="upload" > Add Photos</label>
                 <input type="file" id='file' accept=".jpg,.jpeg,.webp,.png">
                 <div class="imageview"></div>
-                <input type="submit" id='submit'>
+                <input type="submit" id='submit' value="Add Itenerary">
             </form>
         </div>
      

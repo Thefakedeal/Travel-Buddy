@@ -99,15 +99,17 @@ input{
 
 #placeAdder{
     display: flex;
+    margin: 0px auto;
     width: 80%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 #placeName{
-    flex: 7
+    width: 70%;
 }
 
 #addButton{
-    flex: 3;
+    width: 30%;
     height: auto;
     background-color: var(--primary-color-dark);
     text-align: center;

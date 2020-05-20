@@ -43,7 +43,7 @@ function displayPlaces(){
             content.innerHTML = places.map(place=>{
                 return `<li>
                 <span class="placeName">${place.name}</span>
-                <span class="deleteIt" title="Delete Place" data-placeID='${place.placeID}' data-name='${place.name}' onClick="deletePlace(this)"> 🗑️ </span> 
+                <span class="deleteIt" title="Delete Place" data-placeID='${place.placeID}' data-name='${place.name}' onClick="deletePlace(this)"> 🗑️  </span> 
                 </li>`
             }).join(' ')
         })
@@ -77,7 +77,7 @@ function displayFavouritePlaces(){
                 return `<li>
                 <span class="placeName">${favouritePlace.name}</span>
                 <input type="checkbox" class="favourite" id="${starID}" value='1' data-placeID='${favouritePlace.placeID}' onClick='changeFavouritePlace(this)' checked hidden> 
-                <label for="${starID}"> ★ </label> 
+                <label for="${starID}"> ★  </label> 
                 </li>`
             })
         })
@@ -94,7 +94,7 @@ function displayFavouriteIteneraries(){
             return `<li>
             <span class="iteneraryName">${favouriteItenerary.name}</span>
             <input type="checkbox" class="favourite" id="${starID}" value='1' data-iteneraryID='${favouriteItenerary.iteneraryID}' onClick='changeFavouriteItenerary(this)' checked hidden> 
-            <label for="${starID}"> ★ </label> 
+            <label for="${starID}"> ★ </label>
             </li>`})
 
     })
