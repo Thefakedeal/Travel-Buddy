@@ -1,6 +1,6 @@
 //Global Constants
-const urlSearch= new URLSearchParams(location.search);
-const placeID=urlSearch.get('placeID')
+const URLSEARCH= new URLSearchParams(location.search);
+const PLACEID=URLSEARCH.get('placeID')
 
 //Global Variables
 let number= 0; //iteration of how many sets of images have been requested
@@ -19,12 +19,12 @@ const loadImages= document.getElementById('loadImages'); //load more sets of ima
 const favourite = document.getElementById('favourite'); //checkbox showing if place is favourited by user or not
 
 //Functions initialized on page load
-displayPlaceData(placeID);
-displayLikes(placeID);
-displayComments(placeID)
-displayMyReview(placeID);
-displayImages(placeID);
-displayFavourite(placeID);
+displayPlaceData(PLACEID);
+displayLikes(PLACEID);
+displayComments(PLACEID)
+displayMyReview(PLACEID);
+displayImages(PLACEID);
+displayFavourite(PLACEID);
 displayMyLocation();
 
 //used to change the global variable myVote from promises
@@ -47,6 +47,15 @@ function removePhoto(id){
 }
 
 function displayMyLocation(){
+    if(localStorage.getItem('location')){
+        const [lat, lon]= JSON.parse(localStorage.getItem('location'));
+        const myLatitude= parseFloat(lat);
+        const myLongitude= parseFloat(lon);
+        window.onload= ()=>{
+            myposition=L.marker([myLatitude,myLongitude]).addTo(mymap).bindPopup(`Starting Postiton`).openPopup();
+        }
+        return;
+    }
     getCurrentLocation()
     .then(myLocation=>{
         sessionStorage.setItem('location', JSON.stringify(myLocation));
@@ -377,10 +386,10 @@ submitComment.addEventListener('click', (e)=>{
 
     const comment= document.getElementById('comment');
 
-    postComment(placeID, comment.value)
+    postComment(PLACEID, comment.value)
         .then((response)=>{
             comment.value='';
-            displayComments(placeID); 
+            displayComments(PLACEID); 
         }) 
         .catch(text=>{
             alert(text);
@@ -394,7 +403,7 @@ favourite.addEventListener('change', (e)=>{
         star=1;
     }
     const action={
-        placeID: placeID,
+        placeID: PLACEID,
         star
     }
     fetch(`/favourite/place`,{
@@ -421,7 +430,7 @@ myRatingElement.forEach(vote=>
             }
             setMyVote(value);
             action={
-                placeID: placeID,
+                placeID: PLACEID,
                 likes: value
             }
             fetch('/rating/place/vote',{
@@ -441,7 +450,7 @@ navigate.addEventListener('click', (e)=>{
         return;
     }
     const myLocation= JSON.parse(sessionStorage.getItem('location'));
-    getRoute(placeID,myLocation)
+    getRoute(PLACEID,myLocation)
         .then(coordinates=>{
             const polyline = L.polyline(coordinates, {color: 'red'}).addTo(mymap);
             const myposition=L.marker(myLocation).addTo(mymap).bindPopup(`Your Location`);
@@ -456,7 +465,7 @@ navigate.addEventListener('click', (e)=>{
 
 loadImages.addEventListener('click', (e)=>{
     number= number+1;
-    getImage(placeID,number)
+    getImage(PLACEID,number)
         .then(images=>{
             const imagesElement= document.querySelector('.images');
             imagesElement.innerHTML = images.map(image=>{
@@ -468,7 +477,7 @@ loadImages.addEventListener('click', (e)=>{
 })
 
 submitPhotos.addEventListener('click', async e=>{
-    sendphoto.set('placeID',placeID);
+    sendphoto.set('placeID',PLACEID);
     reader= new FileReader();
     response= await fetch('/upload/places/photos',{
         method: 'POST',
@@ -480,7 +489,7 @@ submitPhotos.addEventListener('click', async e=>{
         imageview.innerHTML='';
         submitPhotos.disabled=true;
         sendphoto = new FormData();
-        displayImages(placeID);
+        displayImages(PLACEID);
 
     }
 })

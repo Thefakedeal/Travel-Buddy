@@ -12,17 +12,18 @@ const accepted_catagory= variables.catagories;
 
 router.get('/', (req,res)=>{
     let {lat, lon, catagory='all'} = req.query;
-    lat= parseFloat(lat).toFixed(4);
-    lon= parseFloat(lon).toFixed(4);
-    let minlat= parseFloat(lat) - 0.02;
-    let maxlat= parseFloat(lat) + 0.02;
-    let minlon= parseFloat(lon) - 0.02;
-    let maxlon= parseFloat(lon) + 0.02;
+    lat= parseFloat(lat).toFixed(8);
+    lon= parseFloat(lon).toFixed(8);
+    const minlat= parseFloat(lat) - 0.02;
+    const maxlat= parseFloat(lat) + 0.02;
+    const minlon= parseFloat(lon) - 0.02;
+    const maxlon= parseFloat(lon) + 0.02;
     if(accepted_catagory.includes(catagory) || catagory==='all')
     {
         if(catagory==='all'){
             query= 'SELECT * from places WHERE (lat BETWEEN ? AND ?) AND (lon BETWEEN ? AND ?) ORDER BY rank DESC';
             value= [minlat,maxlat,minlon,maxlon];
+
         }
         else{
             query= 'SELECT * from places WHERE catagory=? AND (lat BETWEEN ? AND ?) AND (lon BETWEEN ? AND ?) ORDER BY rank DESC';

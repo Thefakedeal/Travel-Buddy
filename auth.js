@@ -36,7 +36,6 @@ router.get('/login', (req,res)=>{
 
 router.post('/login', (req,res)=>{
     const{email, password}=req.body;
-
     sqlQuery("SELECT * FROM users WHERE email=? LIMIT 1", email)
         .then((result)=>{
             if( result.length=== 0){

@@ -1,25 +1,32 @@
+initialization()
 
-(()=>{
-
-    if(!sessionStorage.getItem('location')){
-        getCurrentLocation()
-                .then(result=>{
-                    sessionStorage.setItem('location', JSON.stringify(result));
-                })
-                .catch(err=>{
-                    myPosition= [26.8114,87.2850];
-                    sessionStorage.setItem('reference', JSON.stringify(myPosition));
-                    
-                })
-                .finally(()=>{
-                    getTravelRoutes()
-                })
-    }
-    else{
-        getTravelRoutes()
+function initialization(){
+    if(sessionStorage.getItem('location')){
+        const [lat, lon]= JSON.parse(localStorage.getItem('location'));
+        const latitude= parseFloat(lat);
+        const longitude= parseFloat(lon);
+        displayIteneraries(latitude,longitude);
+        return;
     }
     
-})();
+    getCurrentLocation()
+    .then(result=>{
+        sessionStorage.setItem('location', JSON.stringify(result));
+        const latitude= parseFloat(result[0]);
+        const longitude= parseFloat(result[1]);
+        displayIteneraries(latitude,longitude);
+        })
+        .catch(err=>{
+            myPosition= [26.8114,87.2850];
+            sessionStorage.setItem('reference', JSON.stringify(myPosition)); 
+            const latitude= parseFloat(myPosition[0]);
+            const longitude= parseFloat(myPosition[1]);
+            displayIteneraries(latitude,longitude);
+        })      
+}
+
+    
+    
 
 
 function getCurrentLocation(){
@@ -41,20 +48,31 @@ function getCurrentLocation(){
     })
 }
 
+function displayIteneraries(latitude,longitude){
+    const content= document.getElementById('content');
+    getIteneraries(latitude,longitude)
+        .then(iteneraries=>{
+            content.innerHTML = iteneraries.map(addContent).join(' ');
+            const div = document.getElementById("loading");
+            div.parentNode.removeChild(div);
+        })
+    
+}
 
-async function getTravelRoutes(){
-    if(sessionStorage.getItem('location')){
-        [lat, lon]= JSON.parse(sessionStorage.getItem('location'));
+async function getIteneraries(latitude,longitude){
+   try {
+        const response = await fetch(`/api/iteneraries?lat=${latitude}&lon=${longitude}`);
+        if (response.ok) {
+            return response.json();
+        }
+        else {
+            return [];
+        }
     }
-    else{
-        [lat, lon]= JSON.parse(sessionStorage.getItem('reference'));
+    catch (err) {
+        return [];
     }
-    content= document.getElementById('content');
-    response = await fetch(`/api/iteneraries?lat=${lat}&lon=${lon}`);
-    travelroutes= await response.json();
-    content.innerHTML = travelroutes.map(addContent).join(' ');
-    var div = document.getElementById("loading");
-    div.parentNode.removeChild(div);
+
 }
 
 function addContent(itenerary){   

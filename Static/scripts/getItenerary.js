@@ -36,6 +36,15 @@ function setMyVote(vote){
 
 //miscellaneous functions used to create and delete html/map elements
 function displayMyLocation(){
+    if(localStorage.getItem('location')){
+        const [lat, lon]= JSON.parse(localStorage.getItem('location'));
+        const myLatitude= parseFloat(lat);
+        const myLongitude= parseFloat(lon);
+        window.onload= ()=>{
+            myposition=L.marker([myLatitude,myLongitude]).addTo(mymap).bindPopup(`Starting Postiton`).openPopup();
+        }
+        return;
+    }
     getCurrentLocation()
     .then(myLocation=>{
         sessionStorage.setItem('location', JSON.stringify(myLocation));

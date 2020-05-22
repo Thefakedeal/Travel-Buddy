@@ -1,32 +1,51 @@
+
+/***************************  HTML ELEMENTS  **********************************/
+const catagories= document.getElementById('catagories');
+const content= document.getElementById('content');
+/********************************************************************************************/
+
+/*********************************** GLOBAL VARIABLES **************************************/
 let markerLayer= [];
-getCatagory();
+let latitude;
+let longitude;
+/**********************************************************************************************/
+
+/*********************************** INITIALIZED FUNCTIONS **************************************/
+setCurrentLocation();
+displayCurrentLocation();
+setMyPosition();
+displayCatagories();
+displayPlaces();
+
+/**********************************************************************************************/
 
 
-(()=>{
-    
-    if(!sessionStorage.getItem('location')){
-        getCurrentLocation()
-        .then(result=>{
-            sessionStorage.setItem('location', JSON.stringify(result));
-            getPlaces(result);
-                    getReferencePoint(myPosition, "Current Position");
-                })
-                .catch(err=>{
-                    myPosition= [26.8114,87.2850];
-                    sessionStorage.setItem('reference', JSON.stringify(myPosition));
-                    getPlaces(myPosition);
-                    getReferencePoint(myPosition, "Reference Point: Dharan Bhanu Chowk");
-                })
+/********************************** LOCATION FUNCTIONS ********************************************/
+async function setCurrentLocation(){
+    if(sessionStorage.getItem('location')){
+        const myPostion= JSON.parse(sessionStorage.getItem('location'));
+        const latitude= parseFloat(myPostion[0]);
+        const longitude= parseFloat(myPostion[1]);
+        setMyPosition(latitude,longitude);
+        return;
     }
-
-    else{
-        myPosition= JSON.parse(sessionStorage.getItem('location'));
-        getPlaces(myPosition);                                                   
-        getReferencePoint(myPosition, "Current Position");
+    try{
+        const myPostion= await getCurrentLocation();
+        sessionStorage.setItem('location', JSON.stringify(result));
+        const latitude= parseFloat(myPostion[0]);
+        const longitude= parseFloat(myPostion[0]);
+        setMyPosition(latitude,longitude);
+        return;
     }
-    
-})();
-
+    catch(err){
+        const myPosition= [26.8114,87.2850];
+        sessionStorage.setItem('reference', JSON.stringify(myPosition));
+        const latitude= parseFloat(myPostion[0]);
+        const longitude= parseFloat(myPostion[0]);
+        setMyPosition(latitude,longitude);
+        return;
+    }
+}
 
 function getCurrentLocation(){
     return new Promise((resolve,reject)=>{
@@ -43,73 +62,120 @@ function getCurrentLocation(){
       }
       else{
           reject("No Access")
-      }
+        }
     })
 }
 
-async function getCatagory(){
-    response= await fetch('/api/places/catagories');
-    availableCatagory= await response.json();
-    catagories= document.getElementById('catagories');
-    catagories.innerHTML+= availableCatagory.map(catagory =>{
-        return `
-        <label for=${catagory.split(' ').join('_')}> ${catagory} </label> 
-        <input type="radio" name="catagory" id="${catagory.split(' ').join('_')}" value="${catagory}">
-        `;
-    }).join(' ');
+function setMyPosition(lat,lon){
+    latitude= lat;
+    longitude= lon;
+}
 
-   
+function getMyPosition(){
+    const lat= parseFloat(latitude);
+    const lon= parseFloat(longitude);
+    return [lat,lon];
+}
+
+async function displayCurrentLocation(latitude,longitude){
+    const [lat,lon]= getMyPosition();
+    const mylocation= L.marker([lat,lon]).addTo(mymap);
+    mylocation.bindPopup("Reference Point");
+    mymap.setView([lat,lon], 15);
+}
+
+/**********************************************************************************************/
+
+/***********************************CATAGORIES FUNCTIONS*****************************************/
+async function displayCatagories(){
+    const _catagories= await getCatagories();
+    _catagories.forEach(catagory => {
+        displayCatagory(catagory);
+    });
+}
+
+function displayCatagory(catagory){
+    const id= Math.random();
+    catagories.innerHTML +=
+        `<label for=${id}> ${catagory} </label> 
+        <input type="radio" name="catagory" id="${id}" value=${catagory} onClick="displaySelectedCatagoryPlace(this)">`
+}
+
+async function getCatagories(){
+    try {
+        const response = await fetch('/api/places/catagories');
+        if (response.ok)
+            return response.json();
+        return [];
+    }
+    catch (err) {
+        return [];
+    }
 }
 
 
+function displaySelectedCatagoryPlace(catagory){
+    const [latitude,longitude]= getMyPosition();
+    const selectedCatagory= catagory.value;
+    displayPlaces(latitude,longitude,selectedCatagory);
+}
 
-async function getReferencePoint(myPosition, positionDetail){
-    const mylocation= L.marker(myPosition).addTo(mymap);
-    mylocation.bindPopup(positionDetail);
-    mymap.setView(myPosition, 14);
+/**********************************************************************************************/
+
+/************************************ PLACES FUNCTIONS ****************************************/
+async function displayPlaces(catagory){
+    const [latitude,longitude]= getMyPosition();
+    const places= await getPlaces(latitude,longitude,catagory);
+    content.innerHTML= '';
+    removeMarkerLayer();
+    places.forEach(place=>{
+        addToMarkerLayer(place);
+        addPlace(place);
+    })
+    const div = document.getElementById("loading");
+    if(div)
+    div.parentNode.removeChild(div)
 }
 
 
-
-
-
-async function getPlaces([lat,lon]){
-    content= document.getElementById('content');
-    response = await fetch(`/api/places?lat=${parseFloat(lat).toFixed(4)}&lon=${parseFloat(lon).toFixed(4)}`);
-    places= await response.json();
-    content.innerHTML = places.map(addContent).join(' ');
-    selectCatagory= document.getElementsByName('catagory');
-    selectCatagory.forEach(singleCatagory=>
-        {
-            singleCatagory.addEventListener('change', async e=>{
-                catagory= document.querySelector('input[name="catagory"]:checked').value;
-                response = await fetch(`/api/places?lat=${parseFloat(lat).toFixed(4)}&lon=${parseFloat(lon).toFixed(4)}&catagory=${catagory}`);
-                places= await response.json();
-                markerLayer.forEach(markerObject=>{
-                    mymap.removeLayer(markerObject.marker);
-                })
-                content.innerHTML = places.map(addContent).join(' ');
-                
-            });
-        })
-        var div = document.getElementById("loading");
-        div.parentNode.removeChild(div)
+async function getPlaces(latitude,longitude,catagory='all'){
+    try {
+        const response = await fetch(`/api/places?lat=${latitude}&lon=${longitude}&catagory=${catagory}`);
+        if (response.ok) {
+            return response.json();
+        }
+        return [];
+    }
+    catch (err) {
+        return [];
+    }
 }
 
-function addContent(place){
-    markerToAdd= L.marker([place.lat,place.lon]).addTo(mymap).bindPopup(`${place.name}`);
-    placeID= Math.random();
-    markerLayer=[...markerLayer,{placeID:placeID, marker: markerToAdd}];
-    return `
-    
-    <a href="${location}/place?placeID=${place.placeID}" title="${place.catagory}" onmouseover="popupMarker(${placeID})">
-        <li>
-            <span class="placeName">${place.name}</span>
-            <span class="distance"> ${place.distance} km</span>
-        </li>
-    </a>
-    
-    `
+
+function addPlace(place){
+   content.innerHTML +=
+    ` <a href="${location}/place?placeID=${place.placeID}" title="${place.catagory}" onmouseover="popupMarker('${place.placeID}')">
+            <li>
+                <span class="placeName">${place.name}</span>
+                <span class="distance"> ${place.distance} km</span>
+            </li>
+        </a>
+        `
+}
+
+/**********************************************************************************************/
+
+/************************************ MARKER FUNCTIONS **************************************/
+function addToMarkerLayer(place){
+    const markerToAdd= L.marker([place.lat,place.lon]).addTo(mymap).bindPopup(`${place.name}`);
+    markerLayer=[...markerLayer,{placeID:place.placeID, marker: markerToAdd}];
+}
+
+function removeMarkerLayer(){
+    markerLayer.forEach(marker=>{
+        mymap.removeLayer(marker.marker);
+    })
+    markerLayer= [];
 }
 
 function popupMarker(placeID){
@@ -118,5 +184,4 @@ function popupMarker(placeID){
     });
     markerToPopup.marker.openPopup();
 }
-
-
+/**********************************************************************************************/
