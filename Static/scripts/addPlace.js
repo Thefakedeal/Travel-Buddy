@@ -20,8 +20,8 @@ setMyLocation();
 //Function To Manupulate the display of data
 mymap.on('click', e => {
     //Selects the lat and lon of place and shows it in the map
-    const lat= e.latlng.lat;
-    const lon= e.latlng.lng;
+    lat= e.latlng.lat;
+    lon= e.latlng.lng;
     submitButton.disabled= false;
     if(marker!== undefined){
         mymap.removeLayer(marker)

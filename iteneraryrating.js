@@ -29,6 +29,9 @@ router.post('/vote',logincheck, async (req,res)=>{
         .catch(err=>{
             return sqlQuery('UPDATE iteneraryRating SET likes=? WHERE iteneraryID=? AND userID=?', [vote,iteneraryID,userID])
         })
+        .finally(()=>{
+            updateRank(iteneraryID);    
+        })
         .catch(err=>{
                 console.log(err);
         })
@@ -58,26 +61,22 @@ router.post('/comment',logincheck, (req,res)=>{
 
 router.get('/likes', (req,res)=>{
     const {iteneraryID}= req.query;
-    sqlQuery('SELECT COUNT(1) FROM iteneraryRating WHERE likes=1 AND iteneraryID=?',iteneraryID)
-    .then((result)=>{
-        likes= result[0]['COUNT(1)'];
-        return sqlQuery('SELECT COUNT(1) FROM iteneraryRating WHERE likes=-1 AND iteneraryID=?',iteneraryID)    
-    })
-    .then(result=>{
-        dislikes= result[0]['COUNT(1)'];
-        ratio= {likes:likes, dislikes:dislikes}
-        res.status(200).json(ratio);
-        return ratio;
-    })
-    .then(result=>{
-        let rank= likes-dislikes;
-        sqlQuery('UPDATE itenerary SET rank=? WHERE iteneraryID=?',[rank,iteneraryID])
-            .catch(err=>{
-                console.log(err)
-            })
-    })
-    .catch((err)=>{
-         res.status(500).send('Something went wrong');
+    sqlQuery('SELECT likes FROM iteneraryRating WHERE  iteneraryID=?',iteneraryID)
+    .then((votes)=>{
+        let likes= 0;
+        let dislikes= 0;
+     for (const vote of votes) {
+          if(vote.likes===1)
+          {
+              likes++;
+              continue;
+          }
+          if(vote.likes===-1){
+              dislikes++;
+          }
+      }
+      const ratio= {likes:likes, dislikes:dislikes}
+      res.status(200).json(ratio);
     })
 })
 
@@ -115,3 +114,13 @@ router.get('/myrating',logincheck, (req,res)=>{
 
 
 module.exports= router;
+
+function updateRank(iteneraryID) {
+    sqlQuery('SELECT likes FROM iteneraryRating WHERE  iteneraryID=?', iteneraryID)
+        .then((votes) => {
+            const rank = votes.reduce((rank, vote) => {
+                return rank = rank + vote.likes;
+            }, 0);
+            sqlQuery('UPDATE itenerary SET rank=? WHERE iteneraryID=?', [rank, iteneraryID]);
+        });
+}

@@ -17,6 +17,11 @@ const myRatingElement= document.getElementsByName('rating'); // Upvote and Downv
 const navigate= document.getElementById('navigate'); //to get navigation routes
 const loadImages= document.getElementById('loadImages'); //load more sets of images
 const favourite = document.getElementById('favourite'); //checkbox showing if place is favourited by user or not
+const title= document.getElementById('title');
+const description= document.getElementById('description');
+const button= document.querySelectorAll('input[name="rating"]');
+const myComment= document.querySelector('.mycomment');
+const imagesElement= document.querySelector('.images');
 
 //Functions initialized on page load
 displayPlaceData(PLACEID);
@@ -27,46 +32,135 @@ displayImages(PLACEID);
 displayFavourite(PLACEID);
 displayMyLocation();
 
-//used to change the global variable myVote from promises
-function setMyVote(vote){
-    myVote= parseInt(vote);
-}
 
-//miscellaneous functions used to create and delete html/map elements
+/******************************** EVENT LISTENERS **********************************************/
+submitComment.addEventListener('click', (e)=>{
 
-function addMarker({name, lat, lon}){
-    marker=L.marker([lat,lon]).addTo(mymap).bindPopup(`${name}`).openPopup();
-    mymap.setView([lat,lon],16);
-    return marker;
-}
+    const comment= document.getElementById('comment');
 
-function removePhoto(id){
-    item= document.getElementById(id);
-    item.parentNode.removeChild(item);
-    sendphoto.delete(id);
-}
+    postComment(PLACEID, comment.value)
+        .then((response)=>{
+            comment.value='';
+            displayComments(PLACEID); 
+        }) 
+        .catch(text=>{
+            alert(text);
+        })   
 
-function displayMyLocation(){
-    if(localStorage.getItem('location')){
-        const [lat, lon]= JSON.parse(localStorage.getItem('location'));
-        const myLatitude= parseFloat(lat);
-        const myLongitude= parseFloat(lon);
-        window.onload= ()=>{
-            myposition=L.marker([myLatitude,myLongitude]).addTo(mymap).bindPopup(`Starting Postiton`).openPopup();
-        }
-        return;
+})
+
+favourite.addEventListener('change', (e)=>{
+    let star= 0;
+    if(favourite.checked){
+        star=1;
     }
+    setMyFavourite(star);
+})
+
+myRatingElement.forEach(vote=>
+    {
+        vote.addEventListener('click', (e)=>{
+            const clickedButton= e.target;
+            let value = toggleMyVote(clickedButton);
+            setMyVote(value);
+            sendVote(value);
+            
+        });
+})
+
+navigate.addEventListener('click', async (e)=>{
+    try{
+        const myLocation = await getCurrentLocation();
+        const coordinates=  await getRoute(PLACEID,myLocation);
+        startNavigation(coordinates,myLocation);
+    }
+    catch(err){
+        alert(err);
+    }
+})
+
+loadImages.addEventListener('click', (e)=>{
+    number= number+1;
+    getImage(PLACEID,number)
+        .then(images=>{
+            imagesElement.innerHTML += images.map(image=>{
+                return `
+                <img src=${image}>
+                `;
+        }).join(' ');
+    })
+})
+
+submitPhotos.addEventListener('click', async e=>{
+    sendphoto.set('placeID',PLACEID);
+    response= await fetch('/upload/places/photos',{
+        method: 'POST',
+        body: sendphoto
+    });
+    message= await response.text();
+    alert(message);
+    if(response.ok){
+        imageview.innerHTML='';
+        submitPhotos.disabled=true;
+        sendphoto = new FormData();
+        displayImages(PLACEID);
+
+    }
+})
+
+
+file.addEventListener('change', (e)=>{
+    submitPhotos.disabled= false;
+    const reader= new FileReader();
+    const image= file.files[0];    
+    reader.addEventListener('load', e=>{
+        if(image.size<=(2*1024*1025))
+        {   
+            const img = createImageElement(reader);
+            imageview.appendChild(img);
+            sendphoto.append(img.id, image);
+        }
+        else{
+            alert("File Size Too Large. Please Use Image Less than 2MB")
+        }
+            
+    })
+
+    reader.readAsDataURL(image);
+})
+
+
+
+/***********************************LOCATION FUNCTIONS*****************************************/
+function displayMyLocation(){
     getCurrentLocation()
     .then(myLocation=>{
-        sessionStorage.setItem('location', JSON.stringify(myLocation));
-        return myLocation;
-    })
-    .then((myLocation)=>{
+        const [latitude,longitude]= myLocation;
         window.onload= ()=>{
-        myposition=L.marker(myLocation).addTo(mymap).bindPopup(`Starting Postiton`).openPopup();
+            const marker=L.marker([latitude,longitude]).addTo(mymap).bindPopup(`You Are Here`).openPopup();
         }
     })
 }
+
+function getCurrentLocation(){
+    return new Promise((resolve,reject)=>{
+      if('geolocation' in navigator){
+          navigator.geolocation.getCurrentPosition(
+              ({coords: { latitude: myLatitude, longitude: myLongitude}})=>
+              {
+                  resolve([myLatitude,myLongitude]);
+              } ,
+              ()=>{
+                  reject("No Access");
+              }
+              ); 
+      }
+      else{
+          reject("No Access")
+      }
+    })
+}
+
 
 function displayCurrentLocation(){
     getCurrentLocation()
@@ -78,16 +172,16 @@ function displayCurrentLocation(){
         })       
 }
 
-//Function Used to Display data fetched from network requests
+/**********************************************************************************************/
+
+/*********************************PLACE FUNCTIONS***************************************/
 
 function displayPlaceData(placeID){
     getPlaceData(placeID)
         .then((place)=>{
             document.title= place.name;
-            document.getElementById('title').innerHTML= place.name;
-            document.getElementById('description').innerHTML= place.description
-            let {lat, lon} = place;
-            sessionStorage.setItem('placelocation', JSON.stringify([lat,lon]))
+            title.innerHTML= place.name;
+            description.innerHTML= place.description
             document.getElementById('navigate').disabled=false;
             var div = document.getElementById("loading");
             div.parentNode.removeChild(div);
@@ -98,88 +192,6 @@ function displayPlaceData(placeID){
             location= '../';
         })
 }
-
-function displayMyReview(placeID){
-    getMyReview(placeID)
-        .then(myReview=>{
-            const button= document.querySelectorAll('input[name="rating"]');
-            const myComment= document.querySelector('.mycomment');
-            setMyVote(myReview.likes);
-               button.forEach(vote=>{
-                   if(vote.value== myReview.likes){
-                       vote.checked=true;
-                   }
-               })
-            if(myReview.comment!==null){
-                myComment.innerHTML= 
-                `   <dl>
-                        <dt> <b> You Said... </b> <dt>
-                        <dd> ${myReview.comment} </dd>
-                    </dl>
-                `
-           }
-    
-        })
-        .catch((err)=>{
-            console.log(err);
-        })
-}
-
-function displayComments(placeID)
-{
-    getComments(placeID)
-        .then(comments=>{
-            const commentElements= document.querySelector('.comments')
-            commentElements.innerHTML= comments.map(comment=>{
-                return `
-                <dt> <b> ${comment.name} </b>  <dt>
-                <dd> ${comment.comment} </dd>`;
-            })
-        })
-}
-
-function displayImages(placeID){
-    getImage(placeID)
-        .then(images=>{
-            const imagesElement= document.querySelector('.images');
-            imagesElement.innerHTML = images.map(image=>{
-                return `
-                    <img src=${image}>
-                `;
-            }).join(' ');
-        })
-}
-
-function displayLikes(placeID){
-    getLikes(placeID)
-        .then((ratio)=>{
-            const ratioElement= document.getElementById('ratio');
-            const likes= document.getElementById('likes');
-            const dislikes= document.getElementById('dislikes');
-            const totalratio= document.getElementById('totalratio');
-            totalratio.innerHTML= `Likes: <b> ${ratio.likes}</b> Dislikes: <b> ${ratio.dislikes} </b>`
-            if(ratio.likes!==0 || ratio.dislikes!==0 ){
-                likes.style.flex= ratio.likes;
-                dislikes.style.flex= ratio.dislikes;
-                ratioElement.style.display= 'flex'
-        }
-    
-        })      
-}
-
-function displayFavourite(placeID){
-    getFavourite(placeID)
-        .then(response=>{
-            if(response.favourite===1){
-                favourite.checked=true;
-            }
-        })
-        .catch(err=>{
-            favourite.checked=false;
-        })
-}
-
-//Wrapper Functions for network requests
 
 function getPlaceData(placeID){
     return new Promise((resolve, reject)=>{
@@ -210,6 +222,38 @@ function getPlaceData(placeID){
     })
 }
 
+/**********************************************************************************************/
+
+/*********************************MY REVIEWS FUNCTIONS********************************************/
+
+function setMyVote(vote){
+    myVote= parseInt(vote);
+}
+
+function displayMyReview(placeID){
+    getMyReview(placeID)
+        .then(myReview=>{
+            setMyVote(myReview.likes);
+               button.forEach(vote=>{
+                   if(vote.value== myReview.likes){
+                       vote.checked=true;
+                   }
+               })
+            if(myReview.comment!==null){
+                myComment.innerHTML= 
+                `   <dl>
+                        <dt> <b> You Said... </b> <dt>
+                        <dd> ${myReview.comment} </dd>
+                    </dl>
+                `
+           }
+    
+        })
+        .catch((err)=>{
+            console.log(err);
+        })
+}
+
 function getMyReview(placeID){
     return fetch(`/rating/place/myrating?placeID=${placeID}`)
         .then(response=>{
@@ -228,77 +272,84 @@ function getMyReview(placeID){
         })      
 }
 
-function getCurrentLocation(){
+function displayFavourite(placeID){
+    getFavourite(placeID)
+        .then(response=>{
+            if(response.favourite===1){
+                favourite.checked=true;
+            }
+        })
+        .catch(err=>{
+            favourite.checked=false;
+        })
+}
+
+function getFavourite(placeID){
     return new Promise((resolve,reject)=>{
-      if('geolocation' in navigator){
-          navigator.geolocation.getCurrentPosition(
-              ({coords: { latitude: myLatitude, longitude: myLongitude}})=>
-              {
-                  resolve([myLatitude,myLongitude]);
-              } ,
-              ()=>{
-                  reject("No Access");
+        fetch(`/favourite/place?placeID=${placeID}`)
+            .then(response=>{
+              if(response.ok){
+                  return response.json()
               }
-              ); 
-      }
-      else{
-          reject("No Access")
-      }
+              else{
+                  throw Error(response.statusText)
+              } 
+            })
+            .then(status=>{
+                resolve({favourite: parseInt(status.favourite)})
+            })
+            .catch(err=>{
+                reject(err)
+            })
+
     })
 }
 
 
-async function getComments(placeID){
-    try {
-        const response = await fetch(`/rating/place/comments?placeID=${placeID}`);
-        if (response.ok) {
-            return response.json();
-        }
-        else {
-            throw new Error();
-        }
-    }
-    catch (err) {
-        return [];
-    }
-        
+
+/**********************************************************************************************/
+
+/********************************** POST MY REVIEW ******************************************/
+function sendVote(value) {
+    action = {
+        placeID: PLACEID,
+        likes: value
+    };
+    fetch('/rating/place/vote', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(action)
+    });
 }
 
-
-async function getImage(placeID,number=0){
-    try {
-        const response = await fetch(`/api/places/images?placeID=${placeID}&number=${number}`);
-        if (response.ok) {
-            return response.json();
-        }
-        else {
-            throw new Error();
-        }
+function toggleMyVote(clickedButton) {
+    const clickedValue = parseInt(clickedButton.value);
+    let value;
+    if (myVote === clickedValue) {
+        value = 0;
+        clickedButton.checked = false;
     }
-    catch (err) {
-        return [];
+    else {
+        value = clickedValue;
     }
+    return value;
 }
 
-
-function getLikes(placeID){
-    return fetch(`/rating/place/likes?placeID=${placeID}`)
-         .then(response=>{
-             if (response.ok) {
-                 return response.json();
-             }
-             else {
-                 throw new Error();
-             }
-         })
-         .then(ratio=>{
-             return { likes: parseInt(ratio.likes), dislikes: parseInt(ratio.dislikes) };
-         })
-     .catch (err =>{
-          return { likes: 0, dislikes: 0 };
-     }  )
+function setMyFavourite(star) {
+    const action = {
+        placeID: PLACEID,
+        star
+    };
+    fetch(`/favourite/place`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(action)
+    });
 }
-
 
 function postComment(placeID, comment){
     const action= {
@@ -330,26 +381,139 @@ function postComment(placeID, comment){
     })
 }
 
-function getFavourite(placeID){
-    return new Promise((resolve,reject)=>{
-        fetch(`/favourite/place?placeID=${placeID}`)
-            .then(response=>{
-              if(response.ok){
-                  return response.json()
-              }
-              else{
-                  throw Error(response.statusText)
-              } 
-            })
-            .then(status=>{
-                resolve({favourite: parseInt(status.favourite)})
-            })
-            .catch(err=>{
-                reject(err)
-            })
+/**********************************************************************************************/
 
-    })
+/************************************** LIKES AND COMMENTS **************************************/
+
+function displayComments(placeID)
+{
+    getComments(placeID)
+        .then(comments=>{
+            const commentElements= document.querySelector('.comments')
+            commentElements.innerHTML= comments.map(comment=>{
+                return `
+                <dt> <b> ${comment.name} </b>  <dt>
+                <dd> ${comment.comment} </dd>`;
+            })
+        })
 }
+
+async function getComments(placeID){
+    try {
+        const response = await fetch(`/rating/place/comments?placeID=${placeID}`);
+        if (response.ok) {
+            return response.json();
+        }
+        else {
+            throw new Error();
+        }
+    }
+    catch (err) {
+        return [];
+    }
+        
+}
+
+function displayLikes(placeID){
+    getLikes(placeID)
+        .then((ratio)=>{
+            const ratioElement= document.getElementById('ratio');
+            const likes= document.getElementById('likes');
+            const dislikes= document.getElementById('dislikes');
+            const totalratio= document.getElementById('totalratio');
+            totalratio.innerHTML= `Likes: <b> ${ratio.likes}</b> Dislikes: <b> ${ratio.dislikes} </b>`
+            if(ratio.likes!==0 || ratio.dislikes!==0 ){
+                likes.style.flex= ratio.likes;
+                dislikes.style.flex= ratio.dislikes;
+                ratioElement.style.display= 'flex'
+        }
+    
+        })      
+}
+
+function getLikes(placeID){
+    return fetch(`/rating/place/likes?placeID=${placeID}`)
+         .then(response=>{
+             if (response.ok) {
+                 return response.json();
+             }
+             else {
+                 throw new Error();
+             }
+         })
+         .then(ratio=>{
+             return { likes: parseInt(ratio.likes), dislikes: parseInt(ratio.dislikes) };
+         })
+     .catch (err =>{
+          return { likes: 0, dislikes: 0 };
+     }  )
+}
+/**********************************************************************************************/
+
+/**********************************IMAGES FUNCTION*****************************************/
+function createImageElement(reader) {
+    const img = document.createElement('img');
+    img.setAttribute('src', reader.result);
+    img.setAttribute('id', Math.random());
+    img.setAttribute('class', 'uploadPhoto');
+    img.setAttribute('onclick', `removePhoto(${img.id})`);
+    return img;
+}
+
+function displayImages(placeID){
+    getImage(placeID)
+        .then(images=>{
+            const imagesElement= document.querySelector('.images');
+            imagesElement.innerHTML = images.map(image=>{
+                return `
+                    <img src=${image}>
+                `;
+            }).join(' ');
+        })
+}
+
+async function getImage(placeID,number=0){
+    try {
+        const response = await fetch(`/api/places/images?placeID=${placeID}&number=${number}`);
+        if (response.ok) {
+            return response.json();
+        }
+        else {
+            throw new Error();
+        }
+    }
+    catch (err) {
+        return [];
+    }
+}
+
+function removePhoto(id){
+    item= document.getElementById(id);
+    item.parentNode.removeChild(item);
+    sendphoto.delete(id);
+}
+
+/**********************************************************************************************/
+
+/********************************MAPS AND MARKER FUNCTIONS******************************************/
+
+function addMarker({name, lat, lon}){
+    marker=L.marker([lat,lon]).addTo(mymap).bindPopup(`${name}`).openPopup();
+    mymap.setView([lat,lon],16);
+    return marker;
+}
+
+
+/******************************************* NAVIGATION *****************************************/
+
+function startNavigation(coordinates, myLocation) {
+    const polyline = L.polyline(coordinates, { color: 'red' }).addTo(mymap);
+    const myposition = L.marker(myLocation).addTo(mymap).bindPopup(`Your Location`);
+    mymap.panTo(myLocation, 16);
+    displayCurrentLocation();
+    setInterval(displayCurrentLocation, 5000);
+}
+
 
 function getRoute(placeID, myLocation=[]){
     const [mylat,mylon]=myLocation;
@@ -380,140 +544,5 @@ function getRoute(placeID, myLocation=[]){
     })
 }
 
-//Event Listeners
+/**********************************************************************************************/
 
-submitComment.addEventListener('click', (e)=>{
-
-    const comment= document.getElementById('comment');
-
-    postComment(PLACEID, comment.value)
-        .then((response)=>{
-            comment.value='';
-            displayComments(PLACEID); 
-        }) 
-        .catch(text=>{
-            alert(text);
-        })   
-
-})
-
-favourite.addEventListener('change', (e)=>{
-    let star= 0;
-    if(favourite.checked){
-        star=1;
-    }
-    const action={
-        placeID: PLACEID,
-        star
-    }
-    fetch(`/favourite/place`,{
-        method:'POST',
-        headers:{
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(action)
-    })
-})
-
-myRatingElement.forEach(vote=>
-    {
-        vote.addEventListener('click', (e)=>{
-            const clickedButton= e.target;
-            const clickedValue= parseInt(clickedButton.value)
-            let value;
-            if(myVote===clickedValue){
-                value=0;
-                clickedButton.checked=false;
-            }
-            else{
-                value= clickedButton.value;
-            }
-            setMyVote(value);
-            action={
-                placeID: PLACEID,
-                likes: value
-            }
-            fetch('/rating/place/vote',{
-                method: 'POST',
-                headers:{
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(action)
-            })
-            
-        });
-})
-
-navigate.addEventListener('click', (e)=>{
-    if(!sessionStorage.getItem('location')){
-        alert("Please Allow Location");
-        return;
-    }
-    const myLocation= JSON.parse(sessionStorage.getItem('location'));
-    getRoute(PLACEID,myLocation)
-        .then(coordinates=>{
-            const polyline = L.polyline(coordinates, {color: 'red'}).addTo(mymap);
-            const myposition=L.marker(myLocation).addTo(mymap).bindPopup(`Your Location`);
-            mymap.panTo(myLocation,16);
-            displayCurrentLocation();
-            setInterval(displayCurrentLocation, 5000)
-        })
-        .catch(err=>{
-            alert(err)
-        })
-})
-
-loadImages.addEventListener('click', (e)=>{
-    number= number+1;
-    getImage(PLACEID,number)
-        .then(images=>{
-            const imagesElement= document.querySelector('.images');
-            imagesElement.innerHTML = images.map(image=>{
-                return `
-                <img src=${image}>
-                `;
-        }).join(' ');
-    })
-})
-
-submitPhotos.addEventListener('click', async e=>{
-    sendphoto.set('placeID',PLACEID);
-    reader= new FileReader();
-    response= await fetch('/upload/places/photos',{
-        method: 'POST',
-        body: sendphoto
-    });
-    message= await response.text();
-    alert(message);
-    if(response.status===200){
-        imageview.innerHTML='';
-        submitPhotos.disabled=true;
-        sendphoto = new FormData();
-        displayImages(PLACEID);
-
-    }
-})
-
-file.addEventListener('change', (e)=>{
-    submitPhotos.disabled= false;
-    reader= new FileReader();
-        
-    reader.addEventListener('load', e=>{
-        if(file.files[0].size<=(2*1024*1025))
-        {   
-            img= document.createElement('img');
-            img.setAttribute('src',reader.result);
-            img.setAttribute('id',Math.random());
-            img.setAttribute('class','uploadPhoto');
-            img.setAttribute('onclick', `removePhoto(${img.id})`);
-            imageview.appendChild(img);
-            sendphoto.append(img.id, file.files[0]);
-        }
-        else{
-            alert("File Size Too Large. Please Use Image Less than 2MB")
-        }
-            
-    })
-
-    reader.readAsDataURL(file.files[0]);
-})

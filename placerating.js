@@ -29,44 +29,12 @@ router.post('/vote',logincheck, (req,res)=>{
         .catch(err=>{
             return sqlQuery('UPDATE placeRating SET likes=? WHERE placeID=? AND userID=?', [vote,placeID,userID])
         })
+        .finally(()=>{
+            updateRank(placeID);    
+        })
         .catch(err=>{
                 console.log(err);
         })        
-    // try{
-    //     const result= await sqlQuery(query,[likes, userID,placeID]);
-    //     if(result.affectedRows===0){
-    //         if(parseInt(likes)===1){
-    //             ratingquery= 'UPDATE places SET rank= rank + 1 WHERE placeID=?';
-    //         }
-    //         else{
-    //             ratingquery= 'UPDATE places SET rank= rank - 1 WHERE placeID=?';
-    //         }
-    //         const success= await sqlQuery(ratingquery, placeID)
-    //         if(success){
-    //             if(result.affectedRows===0)
-    //             {   
-    //                 query= 'INSERT INTO placeRating ( likes, userID, placeID ) VALUES (?,?,?)'
-    //                 await sqlQuery(query,[likes, userID, placeID ])
-    //             }
-    //         }
-               
-    //     }
-    //     else if(result.changedRows!==0){
-    //         if(parseInt(likes)===1){
-    //             ratingquery= 'UPDATE places SET rank= rank + 2 WHERE id=?';
-    //         }
-    //         else{
-    //             ratingquery= 'UPDATE places SET rank= rank - 2 WHERE id=?';
-    //         }
-    //         await sqlQuery(ratingquery,placeID);
-
-    //     }
-    // }
-    // catch(error)
-    // {
-    //     console.log(err)
-    // }
-   
     
 });
 
@@ -110,26 +78,22 @@ router.get('/comments', async (req,res)=>{
 
 router.get('/likes', (req,res)=>{
     const {placeID}= req.query;
-    sqlQuery('SELECT COUNT(1) FROM placeRating WHERE likes=1 AND placeID=?',placeID)
-    .then((result)=>{
-        likes= result[0]['COUNT(1)'];
-        return sqlQuery('SELECT COUNT(1) FROM placeRating WHERE likes=-1 AND placeID=?',placeID)    
-    })
-    .then(result=>{
-        dislikes= result[0]['COUNT(1)'];
-        ratio= {likes:likes, dislikes:dislikes}
-        res.status(200).json(ratio);
-        return ratio;
-    })
-    .then(result=>{
-        let rank= likes-dislikes;
-        sqlQuery('UPDATE places SET rank=? WHERE placeID=?',[rank,placeID])
-            .catch(err=>{
-                console.log(err)
-            })
-    })
-    .catch((err)=>{
-         res.status(500).send('Something went wrong');
+    sqlQuery('SELECT likes FROM placeRating WHERE placeID=?',placeID)
+    .then((votes)=>{
+        let likes= 0;
+        let dislikes= 0;
+     for (const vote of votes) {
+          if(vote.likes===1)
+          {
+              likes++;
+              continue;
+          }
+          if(vote.likes===-1){
+              dislikes++;
+          }
+      }
+      const ratio= {likes:likes, dislikes:dislikes}
+      res.status(200).json(ratio);
     })
 })
 
@@ -153,3 +117,13 @@ router.get('/myrating',logincheck, (req,res)=>{
 
 
 module.exports= router;
+
+function updateRank(placeID) {
+    sqlQuery('SELECT likes FROM placeRating WHERE placeID=?', placeID)
+        .then((votes) => {
+            const rank = votes.reduce((rank, vote) => {
+                return rank = rank + vote.likes;
+            }, 0);
+            sqlQuery('UPDATE places SET rank=? WHERE placeID=?', [rank, placeID]);
+        });
+}
