@@ -33,6 +33,7 @@ displayComments(iteneraryID);
 displayLikes(iteneraryID);
 displayMyReview(iteneraryID);
 displayFavourite(iteneraryID);
+displayMyLocation();
 
 /************************************** EVENT LISTENERS ***************************************/
 
@@ -143,7 +144,7 @@ function displayMyLocation(){
     getCurrentLocation()
     .then(myLocation=>{
         window.onload= ()=>{
-        myposition=L.marker(myLocation).addTo(mymap).bindPopup(`Starting Postiton`).openPopup();
+        myposition=L.marker(myLocation).addTo(mymap).bindPopup(`You Are Here`).openPopup();
         }
     })
 }

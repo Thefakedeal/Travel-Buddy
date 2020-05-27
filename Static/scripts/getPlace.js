@@ -136,9 +136,8 @@ function displayMyLocation(){
     getCurrentLocation()
     .then(myLocation=>{
         const [latitude,longitude]= myLocation;
-        window.onload= ()=>{
-            const marker=L.marker([latitude,longitude]).addTo(mymap).bindPopup(`You Are Here`).openPopup();
-        }
+        const marker=L.marker([latitude,longitude]).addTo(mymap).bindPopup(`You Are Here`).openPopup();
+        
     })
 }
 
