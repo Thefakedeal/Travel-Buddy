@@ -1,5 +1,6 @@
 const express= require('express');
 const router= express.Router();
+const { deletePlaceByUser }= require('./places_functions');
 const sqlQuery= require('./sqlwrapper');
 
 function logincheck(req,res,next){
@@ -12,16 +13,16 @@ function logincheck(req,res,next){
 }
 
 
-router.delete('/place', logincheck, (req,res)=>{
+router.delete('/place', logincheck, async (req,res)=>{
     const {placeID}= req.query;
-    sqlQuery('DELETE FROM places WHERE placeID=? AND userID=?', [placeID, req.session.user])
-        .then((result)=>{
-            res.sendStatus(200);
-        })
-        .catch(err=>{
-            console.log(err);
-            res.sendStatus(500);
-        })
+    const userID= req.session.user;
+    try{
+        await deletePlaceByUser(placeID,userID);
+        res.sendStatus(200);
+    }
+    catch(err){
+        res.sendStatus(500);
+    }
 });
 
 router.delete('/itenerary', logincheck, (req,res)=>{

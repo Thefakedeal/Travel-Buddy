@@ -1,5 +1,6 @@
 const express= require('express');
 const sqlQuery= require('./sqlwrapper');
+const { isFavouritePlace ,setPlaceAsFavourite, deletePlaceAsFavourite, getFavouritePlaces } = require('./places_functions');
 const router= express.Router();
 
 function logincheck(req,res,next){
@@ -11,16 +12,16 @@ function logincheck(req,res,next){
     }
 }
 
-router.get('/places', logincheck, (req,res)=>{
+router.get('/places', logincheck, async (req,res)=>{
     const userID= req.session.user;
-    sqlQuery('SELECT DISTINCT places.placeID, places.name FROM places INNER JOIN userfavouriteplaces ON places.placeID= userfavouriteplaces.placeID WHERE userfavouriteplaces.userID=?',userID)
-        .then(places=>{
-            res.status(200).json(places)
-        })
-        .catch(err=>{
-            console.log(err)
-            res.sendStatus(500);
-        })
+    try{
+        const places= await getFavouritePlaces(userID);
+        res.status(200).json(places);
+    }
+    catch(err){
+        console.log(err);
+        res.sendStatus(500);
+    }
 })
 
 router.get('/iteneraries', logincheck, (req,res)=>{
@@ -35,25 +36,29 @@ router.get('/iteneraries', logincheck, (req,res)=>{
         })
 })
 
-router.post('/place', logincheck, (req,res)=>{
+router.post('/place', logincheck, async (req,res)=>{
     const { star, placeID}= req.body;
     const userID= req.session.user;
     const favourite= parseInt(star);
-    if(favourite===1){
-        sqlQuery('INSERT INTO userfavouriteplaces(userID, placeID) VALUES(?,?)',[userID, placeID])
-            .catch(err=>{
-
-            })
+    try {
+        if(favourite===1){
+            if(await setPlaceAsFavourite(userID,placeID)){
+                res.sendStatus(200);
+                return;
+            }
+        }
+        else if(favourite===0){
+            if(await deletePlaceAsFavourite(userID,placeID)){
+              res.sendStatus(200);
+              return;  
+            }
+        }
+        res.sendStatus(400);
     }
-    else if(favourite===0){
-        sqlQuery('DELETE FROM userfavouriteplaces WHERE userID=? AND placeID=?',[userID, placeID])
-            .catch(err=>{
-
-            })
+    catch(err){
+        res.sendStatus(500);
     }
-    else{
-        return;
-    }
+    
 })
 
 router.post('/itenerary', logincheck, (req,res)=>{
@@ -77,22 +82,20 @@ router.post('/itenerary', logincheck, (req,res)=>{
     }
 })
 
-router.get('/place', logincheck, (req,res)=>{
+router.get('/place', logincheck, async (req,res)=>{
     const {placeID} = req.query;
     const userID= req.session.user;
-    sqlQuery('SELECT COUNT(1) FROM places INNER JOIN userfavouriteplaces ON places.placeID= userfavouriteplaces.placeID WHERE userfavouriteplaces.userID=? AND userfavouriteplaces.placeID=? LIMIT 1',[userID,placeID])
-    .then(result=>{
-        if(result[0]['COUNT(1)']==1){
+    try{
+        if(await isFavouritePlace(placeID,userID) ){
             res.status(200).json({favourite: 1})
+            return;
         }
-        else{
-            res.status(200).json({favourite: 0})
-        }
-        })
-        .catch(err=>{
-            console.log(err)
-            res.sendStatus(500);
-        })
+        res.status(200).json({favourite: 0});  
+    }
+    catch(err){
+        console.log(err);
+        res.status(200).json({favourite: 0});  
+    }
 })
 
 router.get('/itenerary', logincheck, (req,res)=>{

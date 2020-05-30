@@ -1,6 +1,7 @@
 const express= require('express');
 const router= express.Router();
-const sqlQuery= require('./sqlwrapper')
+const {getPlacesUploadedByUser}= require('./places_functions');
+const sqlQuery= require('./sqlwrapper');
 
 function logincheck(req,res,next){
     if(req.session.user){
@@ -13,15 +14,15 @@ function logincheck(req,res,next){
 }
 
 
-router.get('/places', logincheck, (req,res)=>{
-    sqlQuery('SELECT placeID,name,rank from places WHERE userID=?',req.session.user)
-        .then(places=>{
-            res.status(200).json(places);
-        })
-        .catch(err=>{
-            res.status(500).send("Something Went Wrong");
-            console.log(err);
-        })
+router.get('/places', logincheck, async (req,res)=>{
+    const userID= req.session.user;
+    try{
+        const places= await getPlacesUploadedByUser(userID);
+        res.status(200).json(places);
+    }
+    catch(err){
+        res.status(500).send('Something Went Wrong');
+    }
 });
 
 router.get('/iteneraries', logincheck, (req,res)=>{

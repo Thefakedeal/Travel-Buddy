@@ -2,7 +2,8 @@ const express = require('express');
 const uuid= require('uuid');
 const sharp= require('sharp');
 const sqlQuery= require('./sqlwrapper');
-const values = require('./variables.json')
+const values = require('./variables.json');
+const { addPlace, addImagesToPlaceDatabase } = require('./places_functions');
 
 const router= express.Router();
 
@@ -21,114 +22,103 @@ function logincheck(req,res,next){
 }
 
 
-function reduceImgSizeAndConvertToJpeg(image){
-    imageID= uuid.v4()
-    randomstringpath= `images/${imageID}.jpeg`
-    sharp(image.data)
-        .resize(400,400,{fit: "inside"})
-            .toFile(`${randomstringpath}`, (err, info) => { 
-      if(err){
-          return new Error(err);
-      }
-  });
-    return imageID;
+function reduceImgSizeAndConvertToJpeg(image) {
+    imageID = uuid.v4()
+    randomstringpath = `images/${imageID}.jpeg`;
+
+    return new Promise((resolve, reject) => {
+        sharp(image.data)
+            .resize(400, 400, {
+                fit: "inside"
+            })
+            .toFile(`${randomstringpath}`, (err, info) => {
+                if (err) reject();
+                resolve(imageID);
+            });
+    })
 }
 
 
-function savePhotos(file_array, placeID, userID){
-    let flag= 'success';
-    let imageDetails=[];
+async function savePhotos(file_array){
+    let imageIDArrays=[];
+
     for(image in file_array){
         if(file_array[image].size <= (1024*1024*2))
         {   
-            filetype= (file_array[image].name).split('.').pop();
+            const filetype= (file_array[image].name).split('.').pop();
 
             if(acceptedFileTypes.includes(filetype)){
-                    imageID=reduceImgSizeAndConvertToJpeg(file_array[image]);
-                    if(typeof(imageID) === typeof(Error)){
-                        return flag= 'fail';
+                    try{
+                        const imageID= await reduceImgSizeAndConvertToJpeg(file_array[image]);
+                        imageIDArrays= [...imageIDArrays,imageID];
                     }
-                    else{
-                        if(imageID){
-
-                            imageDetails= [...imageDetails, [imageID,placeID,userID]]
-                        }
-                    }
+                    catch(err){
+                        continue;
+                    }   
                 }   
         }
     }
 
-    sqlQuery('INSERT INTO placephotos(imageID,placeID,userID) VALUES ?', [imageDetails])
-        .catch(err=> console.log(err))
-
-    return flag;
+   return imageIDArrays;
 }
 
 
 
-router.post('/', logincheck, (req,res)=>{
+router.post('/', logincheck, async (req,res)=>{
   
     const {name, description, lat, lon, catagory} = req.body;
     const userID= req.session.user;
 
-    const placeJSON={
-        placeID: uuid.v4(),
-        name: name,
-        catagory: catagory,
-        description: description,
-        lat: parseFloat(lat).toPrecision(10),
-        lon: parseFloat(lon).toPrecision(10),
-        userID: userID,
+    if(accepted_catagory.includes(catagory)){
+        try{
+            const placeID= await addPlace(name,description,lat,lon,catagory,userID);
+            if(!placeID){
+                res.sendStatus(500);
+                return;
+            }
+            if(req.files===null){
+                res.status(200).send(placeID);
+                return;
+            }
+            const savedPhotosIDs = await savePhotos(req.files);
+            const photosAdded= await addImagesToPlaceDatabase(placeID,userID, savedPhotosIDs);
+            res.status(200).send(placeID);
+            let numOfPhotosAdded= 0;
+            if(photosAdded) numOfPhotosAdded= savedPhotosIDs.length;
+            console.log(`${numOfPhotosAdded} photos Added for, placeID: ${placeID}`);
+        }
+        catch(err){
+            console.log(err);
+        }
+    }
+    else{
+        res.status(403).send(`${catagory} is unsupported`);
     }
     
-    if(accepted_catagory.includes(placeJSON.catagory) )
-    {
-        sqlQuery('INSERT INTO places SET ?', placeJSON)
-            .then(results=>{
-                if(req.files){
-                    const flag=savePhotos(req.files, placeJSON.placeID, userID);
-                    if(flag==='fail'){
-                        throw new Error(flag);
-                    }
-                }
-                res.status(200).send(placeJSON.placeID);
-            })
-            .catch(err=>{
-                sqlQuery('DELETE FROM PLACES WHERE id=?',placeJSON.id);
-                console.log(err);
-                if(err.errno===1062)
-                { res.status(403).send('The Given Place Already Exists');}
-                else{
-                    res.status(500).send('Some Thing Went Wrong')
-                 }
-            })
-            
-    }
-    else
-    {
-        res.status(403).send('Catagory Unsupported');
-    }
+
 })
 
 
-router.post('/photos',logincheck, (req,res)=>{
-    let { placeID }= req.body;
+router.post('/photos',logincheck, async (req,res)=>{
+    const { placeID }= req.body;
     const userID= req.session.user;
-    if(Array.isArray(placeID)){
-        placeID= id[0];
+    if(!(req.files && placeID)){
+        res.status(404).send('No Photos Found');
+        return;
     }
-    if(req.files && placeID){
-        message= savePhotos(req.files, placeID,userID)
-        if(message=== 'fail'){
-            res.status(500).send(message);
+    try{
+        const savedPhotosIDs = await savePhotos(req.files);
+        const photosAdded= await addImagesToPlaceDatabase(placeID,userID, savedPhotosIDs);
+        const numOfPhotosAdded= savedPhotosIDs.length;
+        if(numOfPhotosAdded===0 || !(photosAdded)){
+            res.status(500).send('Something Went Wrong');
+            return;
         }
-        else if(message=== 'success'){
-            res.status(200).send(message);
-        }
+        res.status(200).send(`${numOfPhotosAdded} Photo(s) Uploaded`);
     }
-   else{
-        res.status(500).send("No photos");
-   }
+    catch(err){
+        res.status(500).send('Something Went Wrong');
+    }
 })
 
 module.exports=router

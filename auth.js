@@ -117,6 +117,7 @@ router.post('/logout', (req,res)=>{
     if(req.session.user){
         req.session.destroy();
         res.clearCookie(sessionName);
+        res.sendStatus(200);
     }
     else{
         res.status(403).send("Not Logged in to logout")

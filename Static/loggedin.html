@@ -18,8 +18,12 @@
         function logout(){
             fetch('/logout',{
                 method: 'POST'
-            });
-            location='../'
+            })
+            .then(response=>{
+                if(response.ok){
+                    location='../'
+                }
+            })
         }
     </script>
 </html>

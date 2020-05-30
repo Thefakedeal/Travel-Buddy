@@ -22,6 +22,7 @@ const description= document.getElementById('description');
 const button= document.querySelectorAll('input[name="rating"]');
 const myComment= document.querySelector('.mycomment');
 const imagesElement= document.querySelector('.images');
+const comment= document.getElementById('comment');
 
 //Functions initialized on page load
 displayPlaceData(PLACEID);
@@ -35,9 +36,6 @@ displayMyLocation();
 
 /******************************** EVENT LISTENERS **********************************************/
 submitComment.addEventListener('click', (e)=>{
-
-    const comment= document.getElementById('comment');
-
     postComment(PLACEID, comment.value)
         .then((response)=>{
             comment.value='';
@@ -264,7 +262,7 @@ function getMyReview(placeID){
             }
         })
         .then(rating=>{
-            return {likes: parseInt(rating[0].likes) || 0, comment: rating[0].comment || null}
+            return {likes: parseInt(rating.likes) || 0, comment: rating.comment || null}
         })
         .catch(err=>{
             return{ likes: 0, comment: null}
@@ -365,7 +363,7 @@ function postComment(placeID, comment){
                 body: JSON.stringify(action)
             });
             if (response.ok) {
-                resolve();
+                resolve(response.ok);
             }
             else if (response.status === 403) {
                 response.text()

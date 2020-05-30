@@ -1,52 +1,47 @@
 const { setDistance } = require("./setDistance");
-
+const { getPlaces,getPlacesByCatagory, getPlace, getImages } = require('./places_functions.js');
 const express= require('express');
 const router = express.Router();
-const sqlQuery= require('./sqlwrapper');
 const variables= require('./variables.json')
-
-
 
 // Accepted Catagories- All the Catagories Of Places available
 const accepted_catagory= variables.catagories;
 
-router.get('/', (req,res)=>{
-    let {lat, lon, catagory='all'} = req.query;
-    lat= parseFloat(lat).toFixed(8);
-    lon= parseFloat(lon).toFixed(8);
-    const minlat= parseFloat(lat) - 0.02;
-    const maxlat= parseFloat(lat) + 0.02;
-    const minlon= parseFloat(lon) - 0.02;
-    const maxlon= parseFloat(lon) + 0.02;
-    if(accepted_catagory.includes(catagory) || catagory==='all')
-    {
-        if(catagory==='all'){
-            query= 'SELECT * from places WHERE (lat BETWEEN ? AND ?) AND (lon BETWEEN ? AND ?) ORDER BY rank DESC';
-            value= [minlat,maxlat,minlon,maxlon];
+function getMinMaxLatitudeLongitude(latitude,longitude, range=0.0){
+    const lat= parseFloat(latitude).toFixed(8);
+    const lon= parseFloat(longitude).toFixed(8);
+    const minlat= parseFloat(lat) - range;
+    const maxlat= parseFloat(lat) + range;
+    const minlon= parseFloat(lon) - range;
+    const maxlon= parseFloat(lon) + range;
+    return [minlat,maxlat,minlon,maxlon];
+}
 
+router.get('/', async (req,res)=>{
+    const {lat, lon, catagory='all'} = req.query;
+
+    if(!(accepted_catagory.includes(catagory) || catagory==='all')){
+        res.sendStatus(400);
+        return;
+    }
+
+    const [minlat,maxlat,minlon,maxlon]= getMinMaxLatitudeLongitude(lat,lon,0.02);
+
+    let places= [];
+
+    try{
+        if(catagory==='all'){
+            places= await getPlaces(minlat,minlon,maxlat,maxlon);
         }
         else{
-            query= 'SELECT * from places WHERE catagory=? AND (lat BETWEEN ? AND ?) AND (lon BETWEEN ? AND ?) ORDER BY rank DESC';
-            value= [catagory,minlat,maxlat,minlon,maxlon];
+            places= await getPlacesByCatagory(minlat,minlon,maxlat,maxlon,catagory);
         }
-       
-
-        sqlQuery(query,value)
-            .then((result)=>{
-                return setDistance(result,lat,lon)
-            })
-            .then((returnedval)=>{
-                res.status(200).json(returnedval);
-            })
-            .catch((err)=>{
-                console.log(err);
-                res.status(500).send("Something Wrong Happened");
-            });
-                
-
+        const placesWithDistance= await setDistance(places,lat,lon);
+        res.status(200).json(placesWithDistance);
     }
-    else{
-        res.status(404).send("No Result")
+    catch(err){
+        console.log(err);
+        res.sendStatus(500);
     }
 });
 
@@ -55,59 +50,34 @@ router.get('/catagories', (req,res)=>{
     res.status(200).json(accepted_catagory);
 })
 
-router.get('/place', (req,res)=>{
+router.get('/place', async (req,res)=>{
     const {placeID}= req.query;
-    
-
-    sqlQuery('SELECT * from places WHERE placeID=? LIMIT 1',placeID)
-        .then(result=>{
-            if(result.length !== 0)
-            {
-                response= result[0];
-                res.status(200).json(response);
-            }
-            else{
-                res.status(404).send("Place Doesn't exist")
-            } 
-        })
-        .catch(err=>{
-            console.log(err);
-            res.status(500).send("Sorry! Cant Fetch Place.")
-        })
-    
+    try{
+        const place= await getPlace(placeID);
+        if(place===null){
+            res.status(404).send('Place Not Found');
+            return;
+        }
+        res.status(200).send(place);
+    }
+    catch(err){
+        res.status(500).send('Something Went Wrong');
+        console.log(err);
+    }
 });
 
 
-router.get('/images', (req,res)=>{
+router.get('/images', async (req,res)=>{
     const {placeID,num=0}= req.query;
-    offset= num * 6;
-    sqlQuery('SELECT * from placephotos WHERE placeID=? LIMIT 6 OFFSET ?',[placeID,offset])
-        .then((result)=>{
-            if(result.length !== 0)
-            {
-                let response=[];
-                result.forEach(image => {
-                    response= [...response, `img/${image.imageID}.jpeg`];
-                });
-                res.status(200).json(response);
-            }
-            else{
-                res.status(404).send("Place Doesn't exist")
-                
-            }
-        })
-        .catch((err)=>{
-            res.status(500).send("Sorry! Cant Fetch Place.")
-        });
-
+    const NUMBER_OF_IMAGES= 6;
+    try{
+        const images= await getImages(placeID, NUMBER_OF_IMAGES,num);
+        res.status(200).json(images);
+    }
+    catch(err){
+        console.log(err);
+        res.sendStatus(500);
+    }
 })
-
-
-
- 
-
-
-
-
 
 module.exports= router;
