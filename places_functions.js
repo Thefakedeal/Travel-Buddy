@@ -85,9 +85,9 @@ async function getImages(placeID,numberOfImages, offsetAmount){
     const offset= parseInt(numberOfImages * offsetAmount);
     let arrayOfImageAddresses= [];
     try{
-        const result= await sqlQuery('SELECT * from placephotos WHERE placeID=? LIMIT 6 OFFSET ?',[placeID,offset])
-        if(result.length===0) return [];
-        for(const image of result){
+        const images= await sqlQuery('SELECT * from placephotos WHERE placeID=? LIMIT 6 OFFSET ?',[placeID,offset])
+        if(images.length===0) return [];
+        for(const image of images){
             arrayOfImageAddresses= [...arrayOfImageAddresses, `img/${image.imageID}.jpeg`];
         }
         return arrayOfImageAddresses;
@@ -141,7 +141,7 @@ async function getVotes(placeID){
         return ratio;
     }
     catch(err){
-        return null;
+        return {likes: 0, dislikes:0};
     }
 }
 
@@ -242,7 +242,7 @@ async function getMyRatings(placeID,userID){
         const myRating= await sqlQuery('SELECT likes,comment FROM placeRating WHERE placeID=? AND userID=? LIMIT 1',
         [placeID,userID]);
         if(myRating.length===0) return {likes:0, comment: null};
-        return {likes: parseFloat(myRating[0].likes), comment: myRating[0].comment};
+        return {likes: parseInt(myRating[0].likes), comment: myRating[0].comment};
     }
     catch(err){
         return {likes:0, comment: null};

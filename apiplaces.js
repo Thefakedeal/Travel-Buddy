@@ -1,5 +1,6 @@
 const { setDistance } = require("./setDistance");
 const { getPlaces,getPlacesByCatagory, getPlace, getImages } = require('./places_functions.js');
+const { getMinMaxLatitudeLongitude }= require('./location.js')
 const express= require('express');
 const router = express.Router();
 const variables= require('./variables.json')
@@ -7,15 +8,6 @@ const variables= require('./variables.json')
 // Accepted Catagories- All the Catagories Of Places available
 const accepted_catagory= variables.catagories;
 
-function getMinMaxLatitudeLongitude(latitude,longitude, range=0.0){
-    const lat= parseFloat(latitude).toFixed(8);
-    const lon= parseFloat(longitude).toFixed(8);
-    const minlat= parseFloat(lat) - range;
-    const maxlat= parseFloat(lat) + range;
-    const minlon= parseFloat(lon) - range;
-    const maxlon= parseFloat(lon) + range;
-    return [minlat,maxlat,minlon,maxlon];
-}
 
 router.get('/', async (req,res)=>{
     const {lat, lon, catagory='all'} = req.query;

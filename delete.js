@@ -1,7 +1,8 @@
 const express= require('express');
 const router= express.Router();
 const { deletePlaceByUser }= require('./places_functions');
-const sqlQuery= require('./sqlwrapper');
+const { deleteIteneraryByUser}= require('./itenerary_functions');
+
 
 function logincheck(req,res,next){
     if(req.session.user){
@@ -17,24 +18,32 @@ router.delete('/place', logincheck, async (req,res)=>{
     const {placeID}= req.query;
     const userID= req.session.user;
     try{
-        await deletePlaceByUser(placeID,userID);
-        res.sendStatus(200);
+        const placeDeleted= await deletePlaceByUser(placeID,userID);
+        if(placeDeleted){
+            res.sendStatus(200);
+            return;
+        }
+        res.sendStatus(500);
     }
     catch(err){
         res.sendStatus(500);
     }
 });
 
-router.delete('/itenerary', logincheck, (req,res)=>{
+router.delete('/itenerary', logincheck, async (req,res)=>{
     const {iteneraryID}= req.query;
-    sqlQuery('DELETE FROM itenerary WHERE iteneraryID=? AND userID=?', [iteneraryID, req.session.user])
-        .then((result)=>{
+    const userID= req.session.user;
+    try{
+        const iteneraryDeleted= await deleteIteneraryByUser(iteneraryID,userID);
+        if(iteneraryDeleted){
             res.sendStatus(200);
-        })
-        .catch(err=>{
-            console.log(err);
-            res.sendStatus(500);
-        })
+            return;
+        }
+        res.sendStatus(500);
+    }
+    catch(err){
+        res.sendStatus(500);
+    }
 });
 
 

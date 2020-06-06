@@ -1,6 +1,6 @@
 const express= require('express');
-const sqlQuery= require('./sqlwrapper');
 const { isFavouritePlace ,setPlaceAsFavourite, deletePlaceAsFavourite, getFavouritePlaces } = require('./places_functions');
+const { getFavouriteIteneraries, setIteneraryAsFavourite,deleteIteneraryAsFavourite, isFavouriteItenerary} = require('./itenerary_functions.js')
 const router= express.Router();
 
 function logincheck(req,res,next){
@@ -24,16 +24,15 @@ router.get('/places', logincheck, async (req,res)=>{
     }
 })
 
-router.get('/iteneraries', logincheck, (req,res)=>{
+router.get('/iteneraries', logincheck, async (req,res)=>{
     const userID= req.session.user;
-    sqlQuery('SELECT DISTINCT itenerary.iteneraryID, itenerary.name FROM itenerary INNER JOIN userfavouriteitenerary ON itenerary.iteneraryID= userfavouriteitenerary.iteneraryID WHERE userfavouriteitenerary.userID=?',userID)
-        .then(itenerary=>{
-            res.status(200).json(itenerary)
-        })
-        .catch(err=>{
-            console.log(err)
-            res.sendStatus(500);
-        })
+    try{
+        const iteneraries= await getFavouriteIteneraries(userID);
+        res.status(200).json(iteneraries);
+    }
+    catch(err){
+        res.sendStatus(500);
+    }
 })
 
 router.post('/place', logincheck, async (req,res)=>{
@@ -61,24 +60,27 @@ router.post('/place', logincheck, async (req,res)=>{
     
 })
 
-router.post('/itenerary', logincheck, (req,res)=>{
+router.post('/itenerary', logincheck, async (req,res)=>{
     const { star, iteneraryID}= req.body;
     const userID= req.session.user;
     const favourite= parseInt(star);
-    if(favourite===1){
-        sqlQuery('INSERT INTO userfavouriteitenerary(userID, iteneraryID) VALUES(?,?)',[userID, iteneraryID])
-            .catch(err=>{
-
-            })
+    try{
+        if(favourite===1){
+            if(await setIteneraryAsFavourite(userID,iteneraryID)){
+                res.sendStatus(200);
+                return;
+            }
+        }
+        else if(favourite===0){
+            if(await deleteIteneraryAsFavourite(userID,iteneraryID)){
+                res.sendStatus(200);
+                return;
+            }
+        }
+        res.sendStatus(400)
     }
-    else if(favourite===0){
-        sqlQuery('DELETE FROM userfavouriteitenerary WHERE userID=? AND iteneraryID=?',[userID, iteneraryID])
-            .catch(err=>{
-
-            })
-    }
-    else{
-        return;
+    catch(err){
+        res.sendStatus(500);
     }
 })
 
@@ -98,22 +100,20 @@ router.get('/place', logincheck, async (req,res)=>{
     }
 })
 
-router.get('/itenerary', logincheck, (req,res)=>{
+router.get('/itenerary', logincheck, async (req,res)=>{
     const {iteneraryID}= req.query;
     const userID= req.session.user;
-    sqlQuery('SELECT COUNT(1) FROM itenerary INNER JOIN userfavouriteitenerary ON itenerary.iteneraryID= userfavouriteitenerary.iteneraryID WHERE userfavouriteitenerary.userID=? AND userfavouriteitenerary.iteneraryID=? LIMIT 1',[userID,iteneraryID])
-        .then(result=>{
-            if(result[0]['COUNT(1)']==1){
-                res.status(200).json({favourite: 1})
-            }
-            else{
-                res.status(200).json({favourite: 0})
-            }
-        })
-        .catch(err=>{
-            console.log(err)
-            res.sendStatus(500);
-        })
-})
+    try{
+        if(await isFavouriteItenerary(userID,iteneraryID)){
+            res.status(200).json({favourite: 1})
+            return;
+        }
+        res.status(200).json({favourite: 0});  
+    }
+    catch(err){
+        console.log(err);
+        res.status(200).json({favourite: 0});  
+    }
+});
 
 module.exports= router;

@@ -271,7 +271,7 @@ function getMyReview(iteneraryID){
             }
         })
         .then(rating=>{
-            return {likes: parseInt(rating[0].likes) || 0, comment: rating[0].comment || null}
+            return {likes: parseInt(rating.likes) || 0, comment: rating.comment || null}
         })
         .catch(err=>{
             return{ likes: 0, comment: null}

@@ -1,14 +1,12 @@
 const express = require('express');
-const uuid= require('uuid');
-const sharp= require('sharp');
-const sqlQuery= require('./sqlwrapper');
+const { savePhotos } = require('./savePhotos.js');
 const values = require('./variables.json');
 const { addPlace, addImagesToPlaceDatabase } = require('./places_functions');
 
 const router= express.Router();
 
 
-const acceptedFileTypes= values.fileTypes;
+
 const accepted_catagory= values.catagories;
 
 function logincheck(req,res,next){
@@ -22,45 +20,7 @@ function logincheck(req,res,next){
 }
 
 
-function reduceImgSizeAndConvertToJpeg(image) {
-    imageID = uuid.v4()
-    randomstringpath = `images/${imageID}.jpeg`;
 
-    return new Promise((resolve, reject) => {
-        sharp(image.data)
-            .resize(400, 400, {
-                fit: "inside"
-            })
-            .toFile(`${randomstringpath}`, (err, info) => {
-                if (err) reject();
-                resolve(imageID);
-            });
-    })
-}
-
-
-async function savePhotos(file_array){
-    let imageIDArrays=[];
-
-    for(image in file_array){
-        if(file_array[image].size <= (1024*1024*2))
-        {   
-            const filetype= (file_array[image].name).split('.').pop();
-
-            if(acceptedFileTypes.includes(filetype)){
-                    try{
-                        const imageID= await reduceImgSizeAndConvertToJpeg(file_array[image]);
-                        imageIDArrays= [...imageIDArrays,imageID];
-                    }
-                    catch(err){
-                        continue;
-                    }   
-                }   
-        }
-    }
-
-   return imageIDArrays;
-}
 
 
 
@@ -76,16 +36,17 @@ router.post('/', logincheck, async (req,res)=>{
                 res.sendStatus(500);
                 return;
             }
-            if(req.files===null){
-                res.status(200).send(placeID);
-                return;
+            if(req.files!==null){
+                const savedPhotosIDs = await savePhotos(req.files);
+                const photosAdded= await addImagesToPlaceDatabase(placeID,userID, savedPhotosIDs);
+                if(photosAdded){
+                    console.log(`${savedPhotosIDs.length} ptotos added`)
+                }
+                else{
+                    console.log('Failed To Add Photos')
+                }
             }
-            const savedPhotosIDs = await savePhotos(req.files);
-            const photosAdded= await addImagesToPlaceDatabase(placeID,userID, savedPhotosIDs);
             res.status(200).send(placeID);
-            let numOfPhotosAdded= 0;
-            if(photosAdded) numOfPhotosAdded= savedPhotosIDs.length;
-            console.log(`${numOfPhotosAdded} photos Added for, placeID: ${placeID}`);
         }
         catch(err){
             console.log(err);

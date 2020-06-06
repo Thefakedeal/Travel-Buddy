@@ -71,10 +71,6 @@ router.get('/likes', async (req,res)=>{
     try
     {
         const ratio= await getVotes(placeID);
-        if(ratio===null){
-            res.status(200).json({likes:0,dislikes:0});
-            return;
-        }
         res.status(200).json(ratio);
     }
     catch(err){

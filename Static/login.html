@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="styles/login.css">
 </head>
 <body>
-        <img src="images/travelbuddy.png" alt="Travel Buddy" id="icon" >
-        <form action="/login" method="post" class="input">
+        <img src="images/travelbuddy.svg" alt="Travel Buddy" id="icon" >
+        <form method="post" class="input">
             <p id="message" style="color: red;"></p>
             <a href="../">Back To Menu</a>
             <input type="email" name="email" id="email" placeholder="E-mail" required>
@@ -19,41 +19,5 @@
         </form>
 </body>
 
-<script>
-    form= document.querySelector(".input");
-    p= document.getElementById('message');
-    form.addEventListener('submit', async e=>{
-        e.preventDefault();
-        const email= document.getElementById('email');
-        const password= document.getElementById('password');
-        const credentials={
-            email: email.value,
-            password: password.value
-        }
-    
-        response= await fetch('/login', {
-            method: 'POST',
-            headers:{
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(credentials)
-        });
-        if(response.status===200){
-            location= '../'
-        }
-        else if(response.status===404){
-            email.style.borderColor='red';
-            p.innerHTML="Email Doesn't Exist";
-        }
-        else if(response.status===403){
-            password.style.borderColor='red';
-            p.innerHTML="Wrong Password";
-            
-        }
-        else{
-            alert(await response.text())
-        }
-    })
-
-</script>
+<script src="scripts/login.js"></script>
 </html>
