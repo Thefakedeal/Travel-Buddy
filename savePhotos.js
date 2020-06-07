@@ -3,6 +3,7 @@ const sharp= require('sharp');
 const values = require('./variables.json');
 const acceptedFileTypes= values.fileTypes;
 
+
 function reduceImgSizeAndConvertToJpeg(image) {
     imageID = uuid.v4()
     randomstringpath = `images/${imageID}.jpeg`;

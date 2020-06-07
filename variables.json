@@ -1,4 +1,5 @@
 {
     "catagories": ["bakery", "bank", "bar", "beauty saloon", "cafe", "church", "clothing", "club", "department store", "hair saloon", "hindu temple", "hospital", "library", "liquor store", "lodging", "mosque", "restaurant", "school", "stadium", "super market", "taxi stand", "university", "vetnerary", "others"],
-    "fileTypes": ["png", "jpg", "jpeg", "webp"]
+    "fileTypes": ["png", "jpg", "jpeg", "webp"],
+    "roles": {"ADMIN": "admin", "MODERATOR": "moderator", "VERIFIED": "verified", "UNVERIFIED":"unverified"}
 }
